@@ -2,6 +2,7 @@ package com.leaf.example.demo;
 
 import com.leaf.common.model.ServiceWrapper;
 import com.leaf.remoting.netty.NettyServerConfig;
+import com.leaf.rpc.controller.RateLimitFlowController;
 import com.leaf.rpc.provider.DefaultProvider;
 import com.leaf.rpc.provider.Provider;
 
@@ -11,7 +12,7 @@ public class ProviderExample {
         NettyServerConfig config = new NettyServerConfig();
         Provider provider = new DefaultProvider(config);
         provider.start();
-
+        provider.registerGlobalFlowController(new RateLimitFlowController(100000));
         HelloService helloService = new HelloServiceImpl();
 
         // 注册到本地容器 未发布到注册中心

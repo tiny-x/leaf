@@ -1,6 +1,7 @@
 package com.leaf.remoting.netty;
 
 import com.leaf.common.model.Pair;
+import com.leaf.common.model.ResponseWrapper;
 import com.leaf.remoting.api.*;
 import com.leaf.remoting.api.future.ResponseFuture;
 import com.leaf.remoting.api.payload.ByteHolder;
@@ -76,6 +77,7 @@ public abstract class NettyServiceAbstract {
 
     private void processRequestCommand(ChannelHandlerContext ctx, RequestCommand cmd) {
         Serializer serializer = SerializerFactory.serializer(SerializerType.parse(cmd.getSerializerCode()));
+        ResponseWrapper responseWrapper = new ResponseWrapper();
 
         if (defaultProcessor.getA() != null && defaultProcessor.getB() != null) {
             try {
@@ -83,11 +85,12 @@ public abstract class NettyServiceAbstract {
                     ResponseCommand responseCommand = null;
                     if (defaultProcessor.getA().rejectRequest()) {
                         String message = "[REJECT_REQUEST] system busy, start flow control for a while";
+                        responseWrapper.setResult(message);
                         logger.warn(message);
                         if (!cmd.isOneWay()) {
                             responseCommand = RemotingCommandFactory.createResponseCommand(
                                     cmd.getSerializerCode(),
-                                    serializer.serialize(message),
+                                    serializer.serialize(responseWrapper),
                                     cmd.getInvokeId()
                             );
                             responseCommand.setStatus(ResponseStatus.FLOW_CONTROL.value());
@@ -102,12 +105,13 @@ public abstract class NettyServiceAbstract {
             } catch (RejectedExecutionException e) {
 
                 String message = "[OVERLOAD]system busy, start flow control for a while";
+                responseWrapper.setResult(message);
                 logger.error(message, e);
 
                 if (!cmd.isOneWay()) {
                     ResponseCommand responseCommand = RemotingCommandFactory.createResponseCommand(
                             cmd.getSerializerCode(),
-                            serializer.serialize(message),
+                            serializer.serialize(responseWrapper),
                             cmd.getInvokeId()
                     );
                     responseCommand.setStatus(ResponseStatus.SYSTEM_BUSY.value());
@@ -116,12 +120,13 @@ public abstract class NettyServiceAbstract {
             }
         } else {
             String message = "[ERROR]system error, request process not register";
+            responseWrapper.setResult(message);
             logger.error(ctx.channel() + message);
 
             if (!cmd.isOneWay()) {
                 ResponseCommand responseCommand = RemotingCommandFactory.createResponseCommand(
                         cmd.getSerializerCode(),
-                        serializer.serialize(message),
+                        serializer.serialize(responseWrapper),
                         cmd.getInvokeId()
                 );
                 responseCommand.setStatus(ResponseStatus.SERVER_ERROR.value());
