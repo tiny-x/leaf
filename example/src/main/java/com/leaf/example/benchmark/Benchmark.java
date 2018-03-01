@@ -9,7 +9,7 @@ import org.openjdk.jmh.runner.options.OptionsBuilder;
 
 import java.util.concurrent.TimeUnit;
 
-@Threads(4)
+@Threads(5)
 public class Benchmark {
 
     public static void main(String[] args) throws RunnerException {

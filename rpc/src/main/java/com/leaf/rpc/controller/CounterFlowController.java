@@ -13,11 +13,11 @@ import java.util.concurrent.atomic.AtomicLong;
 public class CounterFlowController implements FlowController {
 
     private final static LinkedList<Long> RANGE_LIST = new LinkedList<>();
-    private volatile static boolean isFlow = false;
+    private final AtomicBoolean isFlow = new AtomicBoolean(false);
     private final AtomicLong atomicLong = new AtomicLong(0);
     private final AtomicBoolean isRun = new AtomicBoolean(false);
-    private ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
-    private long thresholdQps;
+    private final ScheduledThreadPoolExecutor scheduledThreadPoolExecutor;
+    private final long thresholdQps;
 
     private volatile long currentQps;
 
@@ -28,29 +28,29 @@ public class CounterFlowController implements FlowController {
 
     @Override
     public void flowController() throws RejectedExecutionException {
+        atomicLong.incrementAndGet();
         if (isRun.compareAndSet(false, true)) {
             scheduledThreadPoolExecutor.scheduleAtFixedRate(new Runnable() {
                 @Override
                 public void run() {
-                    if (!isFlow) {
-                        RANGE_LIST.addLast(atomicLong.get());
-                        if (RANGE_LIST.size() > 10) {
-                            RANGE_LIST.removeFirst();
-                        }
-                        if ((currentQps = RANGE_LIST.peekLast() - RANGE_LIST.peekFirst()) > thresholdQps) {
-                            isFlow = true;
-                        }
+                    RANGE_LIST.addLast(atomicLong.get());
+                    if (RANGE_LIST.size() > 10) {
+                        RANGE_LIST.removeFirst();
+                    }
+                    if ((currentQps = RANGE_LIST.peekLast() - RANGE_LIST.peekFirst()) > thresholdQps) {
+                        isFlow.compareAndSet(false, true);
+                    } else {
+                        isFlow.compareAndSet(true, false);
                     }
                 }
-            }, 1000, 100, TimeUnit.MILLISECONDS);
+            }, 10, 100, TimeUnit.MILLISECONDS);
         }
 
-        if (isFlow) {
+        if (isFlow.get()) {
             String message = String.format("CounterFlowController qps more than:[%d], current: [%d]",
                     thresholdQps, currentQps);
             throw new RejectedExecutionException(message);
         }
-        atomicLong.incrementAndGet();
     }
 
 }

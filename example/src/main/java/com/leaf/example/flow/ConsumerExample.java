@@ -22,13 +22,18 @@ public class ConsumerExample {
         HelloService helloService = ProxyFactory.factory(HelloService.class)
                 .consumer(consumer)
                 .directory(serviceMeta)
-                .timeMillis(300000L)
+                .timeMillis(10000L)
                 .newProxy();
 
         long l = System.currentTimeMillis();
         for (int i = 0; i < 101; i++) {
-            String s = helloService.sayHello(" biu biu biu!!!");
-            //System.out.printf("---------->: receive provider message %s \n", s);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    String s = helloService.sayHello(" biu biu biu!!!");
+                    System.out.printf("---------->: receive provider message %s \n", s);
+                }
+            }).start();
         }
         System.out.printf("耗时 %s \n", System.currentTimeMillis() - l);
 
