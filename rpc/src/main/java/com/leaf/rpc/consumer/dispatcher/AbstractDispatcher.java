@@ -115,12 +115,12 @@ public abstract class AbstractDispatcher implements Dispatcher {
                                 if (responseFuture.isSuccess()) {
                                     ResponseCommand responseCommand = responseFuture.result();
                                     ResponseWrapper responseWrapper = getSerializer().deserialize(responseCommand.getBody(), ResponseWrapper.class);
-                                    future.set(responseWrapper.getResult());
+                                    future.complete(responseWrapper.getResult());
                                     if (listener != null) {
                                         listener.complete(responseWrapper.getResult());
                                     }
                                 } else {
-                                    future.set(null);
+                                    future.complete(null);
                                     if (listener != null) {
                                         listener.failure(responseFuture.cause());
                                     }

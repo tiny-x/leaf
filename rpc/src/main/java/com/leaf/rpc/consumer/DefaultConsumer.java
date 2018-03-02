@@ -4,12 +4,11 @@ import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.model.Directory;
 import com.leaf.common.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
+import com.leaf.common.utils.AnyThrow;
 import com.leaf.register.api.*;
 import com.leaf.remoting.api.RpcClient;
 import com.leaf.remoting.netty.NettyClient;
 import com.leaf.remoting.netty.NettyClientConfig;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -39,7 +38,7 @@ public class DefaultConsumer implements Consumer {
         try {
             rpcClient.connect(address);
         } catch (Exception e) {
-            throw new RuntimeException("connect to " + address + "fail!");
+            AnyThrow.throwUnchecked(e);
         }
     }
 
