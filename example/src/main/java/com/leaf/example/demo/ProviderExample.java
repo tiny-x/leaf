@@ -11,6 +11,7 @@ public class ProviderExample {
 
     public static void main(String[] args) {
         NettyServerConfig config = new NettyServerConfig();
+        config.setPort(9180);
         Provider provider = new DefaultProvider(config);
         provider.start();
         provider.registerGlobalFlowController(new RateLimitFlowController(100));

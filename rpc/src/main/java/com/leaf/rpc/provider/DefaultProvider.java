@@ -34,6 +34,14 @@ public class DefaultProvider implements Provider {
 
     private ExectorFactory exectorFactory = new ThreadPoolExectorFactory();
 
+
+    public DefaultProvider(int port) {
+        this.config = new NettyServerConfig();
+        this.config.setPort(port);
+        this.serviceProviderContainer = new DefaultServiceProviderContainer();
+        this.server = new NettyServer(config);
+    }
+
     public DefaultProvider(NettyServerConfig nettyServerConfig) {
         this.config = nettyServerConfig;
         this.serviceProviderContainer = new DefaultServiceProviderContainer();

@@ -11,7 +11,9 @@ import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.StrategyConfig;
 import com.leaf.rpc.consumer.cluster.ClusterInvoker;
+import com.leaf.rpc.consumer.dispatcher.DefaultBroadcastDispatcher;
 import com.leaf.rpc.consumer.dispatcher.DefaultRoundDispatcher;
+import com.leaf.rpc.consumer.dispatcher.DispatchType;
 import com.leaf.rpc.consumer.dispatcher.Dispatcher;
 import com.leaf.rpc.consumer.invoke.DefaultInvoker;
 import com.leaf.serialization.api.SerializerType;
@@ -34,6 +36,7 @@ public class ProxyFactory {
     private InvokeType invokeType = InvokeType.SYNC;
     private ClusterInvoker.Strategy strategy = ClusterInvoker.Strategy.FAIL_FAST;
     private int retries = 0;
+    private Dispatcher dispatcher;
 
     public static ProxyFactory factory(Class<?> interfaces) {
 
@@ -72,14 +75,35 @@ public class ProxyFactory {
         return this;
     }
 
+    public ProxyFactory dispatcher(DispatchType dispatchType) {
+        switch (dispatchType) {
+            case BROADCAST: {
+                dispatcher = new DefaultBroadcastDispatcher(
+                        consumer,
+                        RandomRobinLoadBalancer.instance(),
+                        serializerType);
+                break;
+            }
+            case ROUND: {
+                dispatcher = new DefaultRoundDispatcher(
+                        consumer,
+                        RandomRobinLoadBalancer.instance(),
+                        serializerType);
+                break;
+            }
+        }
+        return this;
+    }
+
 
     @SuppressWarnings("unchecked")
     public <T> T newProxy() {
-        Dispatcher dispatcher = new DefaultRoundDispatcher(
-                consumer,
-                RandomRobinLoadBalancer.instance(),
-                serializerType);
-
+        if (dispatcher == null) {
+            dispatcher = new DefaultRoundDispatcher(
+                    consumer,
+                    RandomRobinLoadBalancer.instance(),
+                    serializerType);
+        }
         dispatcher.timeoutMillis(timeoutMillis);
 
         if (consumer.registerService() != null) {

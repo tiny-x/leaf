@@ -1,5 +1,6 @@
 package com.leaf.remoting.netty;
 
+import com.leaf.common.concurrent.SemaphoreReleaseOnce;
 import com.leaf.common.model.Pair;
 import com.leaf.common.model.ResponseWrapper;
 import com.leaf.remoting.api.*;
@@ -22,7 +23,7 @@ import io.netty.channel.ChannelHandlerContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
+import java.util.*;
 import java.util.concurrent.*;
 
 
@@ -31,6 +32,9 @@ public abstract class NettyServiceAbstract {
     private static final Logger logger = LoggerFactory.getLogger(NettyServiceAbstract.class);
 
     protected final ConcurrentMap<Long, ResponseFuture<ResponseCommand>> responseTable =
+            new ConcurrentHashMap(256);
+
+    protected final ConcurrentMap<String, ResponseFuture<ResponseCommand>> responseTableBroadcast =
             new ConcurrentHashMap(256);
 
     protected final HashMap<Integer/* request code */, Pair<RequestProcessor, ExecutorService>> processorTable =
@@ -60,18 +64,80 @@ public abstract class NettyServiceAbstract {
         }
     }
 
+    protected void scanResponseTable() {
+        final List<ResponseFuture> responseFutureList = new LinkedList<ResponseFuture>();
+        Iterator<Map.Entry<Long, ResponseFuture<ResponseCommand>>> it = this.responseTable.entrySet().iterator();
+        while (it.hasNext()) {
+            Map.Entry<Long, ResponseFuture<ResponseCommand>> next = it.next();
+            ResponseFuture responseFuture = next.getValue();
+
+            if ((responseFuture.getBeginTimestamp() + responseFuture.getTimeoutMillis() + 1000) <= System.currentTimeMillis()) {
+                it.remove();
+                responseFuture.release();
+                responseFuture.setSuccess(false);
+                responseFuture.failure(
+                        new RemotingTimeoutException("remove timeout request! timeout:" + responseFuture.getTimeoutMillis()));
+                responseFutureList.add(responseFuture);
+                logger.warn("remove timeout request, {}", responseFuture);
+            }
+        }
+
+        for (ResponseFuture responseFuture : responseFutureList) {
+            try {
+                executeInvokeCallback(null, responseFuture);
+            } catch (Throwable e) {
+                logger.warn("scanResponseTable, operationComplete Exception", e);
+            }
+        }
+    }
+
     private void processResponseCommand(ChannelHandlerContext ctx, ResponseCommand cmd) throws Exception {
         long invokeId = cmd.getInvokeId();
         ResponseFuture<ResponseCommand> future = responseTable.get(invokeId);
+
         if (future != null) {
+            responseTable.remove(invokeId);
+            future.setSuccess(true);
             future.complete(cmd);
+            future.release();
+
             if (future.getInvokeCallback() != null) {
-                responseTable.remove(invokeId);
-                future.executeInvokeCallback();
+                executeInvokeCallback(cmd, future);
             }
         } else {
             logger.warn("receive response, but not matched any request, " + ctx.channel());
             logger.warn(cmd.toString());
+        }
+    }
+
+    private void executeInvokeCallback(ResponseCommand cmd, ResponseFuture<ResponseCommand> future) {
+        ExecutorService executorService = publicExecutorService();
+        if (executorService != null) {
+            try {
+                executorService.submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        try {
+                            future.executeInvokeCallback();
+                        } catch (Throwable t) {
+                            logger.error("ResponseCommand:{} executeInvokeCallback error.", cmd, t);
+                        }
+                    }
+                });
+            } catch (Exception e) {
+                logger.error("publicExecutor maybe busy.", e);
+                try {
+                    future.executeInvokeCallback();
+                } catch (Throwable t) {
+                    logger.error("ResponseCommand:{} executeInvokeCallback error.", cmd, e);
+                }
+            }
+        } else {
+            try {
+                future.executeInvokeCallback();
+            } catch (Throwable t) {
+                logger.error("ResponseCommand:{} executeInvokeCallback error.", cmd, t);
+            }
         }
     }
 
@@ -135,15 +201,15 @@ public abstract class NettyServiceAbstract {
         }
     }
 
-    protected ResponseCommand invokeSync0(Channel channel, RequestCommand request, long timeout, TimeUnit timeUnit)
+    protected ResponseCommand invokeSync0(final Channel channel, final RequestCommand request, long timeout, TimeUnit timeUnit)
             throws RemotingException, InterruptedException {
-        ResponseFuture<ResponseCommand> responseFuture = new ResponseFuture<>();
+        ResponseFuture<ResponseCommand> responseFuture = new ResponseFuture<>(timeUnit.convert(timeout, TimeUnit.MILLISECONDS));
         responseTable.putIfAbsent(request.getInvokeId(), responseFuture);
         try {
             channel.writeAndFlush(request).addListener((ChannelFuture future) -> {
-                responseFuture.setSuccess(future.isSuccess());
                 if (!future.isSuccess()) {
                     responseTable.remove(request.getInvokeId());
+                    responseFuture.setSuccess(false);
                     responseFuture.complete(null);
                     responseFuture.failure(future.cause());
                     logger.warn("send a request command to channel <" + channel + "> failed.");
@@ -164,25 +230,38 @@ public abstract class NettyServiceAbstract {
         }
     }
 
-    protected void invokeAsync0(Channel channel, RequestCommand request,
+    protected void invokeAsync0(final Channel channel, final RequestCommand request,
                                  long timeout, TimeUnit timeUnit, InvokeCallback<ResponseCommand> invokeCallback)
             throws RemotingException, InterruptedException {
 
-        ResponseFuture<ResponseCommand> responseFuture = new ResponseFuture<>(invokeCallback);
-        responseTable.putIfAbsent(request.getInvokeId(), responseFuture);
-
         if (semaphoreAsync.tryAcquire(timeout, timeUnit)) {
 
-            channel.writeAndFlush(request).addListener((ChannelFuture future) -> {
-                responseFuture.setSuccess(future.isSuccess());
-                if (!future.isSuccess()) {
-                    responseTable.remove(request.getInvokeId());
-                    responseFuture.complete(null);
-                    responseFuture.executeInvokeCallback();
-                    responseFuture.failure(future.cause());
-                    logger.warn("send a request command to channel <" + channel + "> failed.");
-                }
-            });
+            ResponseFuture<ResponseCommand> responseFuture = new ResponseFuture<>(
+                    timeUnit.convert(timeout, TimeUnit.MILLISECONDS),
+                    invokeCallback,
+                    semaphoreAsync);
+
+            responseTable.put(request.getInvokeId(), responseFuture);
+
+            try {
+                channel.writeAndFlush(request).addListener((ChannelFuture future) -> {
+
+                    if (!future.isSuccess()) {
+                        responseTable.remove(request.getInvokeId());
+                        responseFuture.setSuccess(false);
+                        responseFuture.complete(null);
+                        responseFuture.executeInvokeCallback();
+                        responseFuture.failure(future.cause());
+                        responseFuture.release();
+                        logger.warn("send a request command to channel <" + channel + "> failed.");
+                    }
+                });
+            } catch (Exception e) {
+                responseTable.remove(request.getInvokeId());
+                responseFuture.release();
+                logger.warn("send a request command to channel <" + channel + "> failed.");
+                throw new RemotingSendRequestException("send request failed", e);
+            }
         } else {
             if (timeout <= 0) {
                 throw new RemotingTooMuchRequestException("invokeAsyncImpl invoke too fast");
@@ -200,16 +279,23 @@ public abstract class NettyServiceAbstract {
     }
 
 
-    protected void invokeOneWay0(Channel channel, RequestCommand request, long timeout, TimeUnit timeUnit)
+    protected void invokeOneWay0(final Channel channel, final RequestCommand request, long timeout, TimeUnit timeUnit)
             throws RemotingException, InterruptedException {
         request.markOneWay();
         if (semaphoreAsync.tryAcquire(timeout, timeUnit)) {
-
-            channel.writeAndFlush(request).addListener((ChannelFuture future) -> {
-                if (!future.isSuccess()) {
-                    logger.warn("send a request command to channel <" + channel + "> failed.");
-                }
-            });
+            SemaphoreReleaseOnce semaphoreReleaseOnce = new SemaphoreReleaseOnce(semaphoreAsync);
+            try {
+                channel.writeAndFlush(request).addListener((ChannelFuture future) -> {
+                    semaphoreReleaseOnce.release();
+                    if (!future.isSuccess()) {
+                        logger.warn("send a request command to channel <" + channel + "> failed.");
+                    }
+                });
+            } catch (Exception e) {
+                semaphoreReleaseOnce.release();
+                logger.warn("send a request command to channel <" + channel + "> failed.");
+                throw new RemotingSendRequestException("send request failed", e);
+            }
         } else {
             if (timeout <= 0) {
                 throw new RemotingTooMuchRequestException("invokeAsyncImpl invoke too fast");
@@ -227,6 +313,8 @@ public abstract class NettyServiceAbstract {
     }
 
     protected abstract ChannelEventListener getChannelEventListener();
+
+    protected abstract ExecutorService publicExecutorService();
 
     class ChannelEventExecutor implements Runnable {
 

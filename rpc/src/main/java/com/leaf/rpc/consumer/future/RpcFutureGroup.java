@@ -8,7 +8,16 @@ public class RpcFutureGroup<V> {
         this.futures = futures;
     }
 
-    public InvokeFuture<V>[] Futures() {
+    public InvokeFuture<V>[] futures() {
         return futures;
     }
+
+    public void addListener(RpcFutureListener<V> listener) {
+        if (futures != null && futures.length > 0) {
+            for (InvokeFuture<V> future : futures) {
+                future.addListener(listener);
+            }
+        }
+    }
+
 }

@@ -23,12 +23,15 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.TimerTask;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class NettyServer extends NettyServiceAbstract implements RpcServer {
 
     private static final Logger logger = LoggerFactory.getLogger(NettyServer.class);
+
+    private static final int AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
 
     private final NettyEncoder encoder = new NettyEncoder();
 
@@ -46,6 +49,10 @@ public class NettyServer extends NettyServiceAbstract implements RpcServer {
 
     private final ChannelEventListener channelEventListener;
 
+    private final ExecutorService publicExecutorService;
+
+    private final ScheduledExecutorService scanResponseTableExecutorService;
+
     public NettyServer(NettyServerConfig config) {
         this(config, null);
     }
@@ -57,20 +64,41 @@ public class NettyServer extends NettyServiceAbstract implements RpcServer {
         this.serverBootstrap = new ServerBootstrap();
         this.nioEventLoopGroupWorker = new NioEventLoopGroup();
         this.nioEventLoopGroupMain = new NioEventLoopGroup();
+
+        this.publicExecutorService = Executors.newFixedThreadPool(AVAILABLE_PROCESSORS, new ThreadFactory() {
+
+            AtomicInteger atomicInteger = new AtomicInteger(0);
+
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setName("PUBLIC#EXECUTOR#" + atomicInteger);
+                return thread;
+            }
+        });
+
+        scanResponseTableExecutorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setName("SCAN#RESPONSE#TABLE");
+                return thread;
+            }
+        });
     }
 
     @Override
-    public void invokeSync(Channel channel, RequestCommand request, long timeoutMillis) throws RemotingException, InterruptedException {
+    public void invokeSync(final Channel channel, final RequestCommand request, long timeoutMillis) throws RemotingException, InterruptedException {
         invokeSync0(channel, request, timeoutMillis, TimeUnit.MILLISECONDS);
     }
 
     @Override
-    public void invokeAsync(Channel channel, RequestCommand request, long timeoutMillis, InvokeCallback<ResponseCommand> invokeCallback) throws RemotingException, InterruptedException {
+    public void invokeAsync(final Channel channel, final RequestCommand request, long timeoutMillis, InvokeCallback<ResponseCommand> invokeCallback) throws RemotingException, InterruptedException {
         invokeAsync0(channel, request, timeoutMillis, TimeUnit.MILLISECONDS, invokeCallback);
     }
 
     @Override
-    public void invokeOneWay(Channel channel, RequestCommand request, long timeoutMillis) throws RemotingException, InterruptedException {
+    public void invokeOneWay(final Channel channel, final RequestCommand request, long timeoutMillis) throws RemotingException, InterruptedException {
         invokeOneWay0(channel, request, timeoutMillis, TimeUnit.MILLISECONDS);
     }
 
@@ -110,6 +138,17 @@ public class NettyServer extends NettyServiceAbstract implements RpcServer {
         } catch (InterruptedException e) {
             logger.error("NettyServer start error ", e);
         }
+
+        this.scanResponseTableExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    scanResponseTable();
+                } catch (Throwable e) {
+                    logger.error("scanResponseTable exception", e);
+                }
+            }
+        }, 1000 * 3, 1000, TimeUnit.MILLISECONDS);
 
         if (channelEventListener != null) {
             new Thread(channelEventExecutor).start();
@@ -203,6 +242,11 @@ public class NettyServer extends NettyServiceAbstract implements RpcServer {
     }
 
     @Override
+    protected ExecutorService publicExecutorService() {
+        return publicExecutorService;
+    }
+
+    @Override
     public void shutdown() {
         if (Objects.nonNull(nioEventLoopGroupMain)) {
             nioEventLoopGroupMain.shutdownGracefully();
@@ -211,5 +255,6 @@ public class NettyServer extends NettyServiceAbstract implements RpcServer {
             nioEventLoopGroupWorker.shutdownGracefully();
         }
     }
+
 
 }

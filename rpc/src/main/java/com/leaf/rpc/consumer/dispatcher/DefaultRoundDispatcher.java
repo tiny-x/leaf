@@ -32,6 +32,6 @@ public class DefaultRoundDispatcher extends AbstractDispatcher {
         RequestCommand requestCommand = new RequestCommand(ProtocolHead.REQUEST, getSerializerCode(), bytes);
         request.setRequestCommand(requestCommand);
 
-        return (T) invoke(channelGroup, request, DispatchType.ROUND, invokeType);
+        return (T) invoke(request, DispatchType.ROUND, invokeType, channelGroup);
     }
 }

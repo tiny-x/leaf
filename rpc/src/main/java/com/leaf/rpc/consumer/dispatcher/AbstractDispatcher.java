@@ -1,6 +1,5 @@
 package com.leaf.rpc.consumer.dispatcher;
 
-
 import com.leaf.common.model.ResponseWrapper;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.remoting.api.InvokeCallback;
@@ -15,6 +14,7 @@ import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.future.RpcContext;
 import com.leaf.rpc.consumer.future.RpcFuture;
+import com.leaf.rpc.consumer.future.RpcFutureGroup;
 import com.leaf.rpc.consumer.future.RpcFutureListener;
 import com.leaf.serialization.api.Serializer;
 import com.leaf.serialization.api.SerializerFactory;
@@ -58,7 +58,10 @@ public abstract class AbstractDispatcher implements Dispatcher {
     }
 
     protected ChannelGroup[] groups(ServiceMeta metadata) {
-        return (ChannelGroup[]) consumer.client().directory(metadata).toArray();
+        CopyOnWriteArrayList<ChannelGroup> channelGroups = consumer.client().directory(metadata);
+        ChannelGroup[] channelGroupsArray = new ChannelGroup[channelGroups.size()];
+        channelGroups.toArray(channelGroupsArray);
+        return channelGroupsArray;
     }
 
     @Override
@@ -75,72 +78,139 @@ public abstract class AbstractDispatcher implements Dispatcher {
         return serializerType.value();
     }
 
-    protected Object invoke(ChannelGroup channelGroup,
-                            final Request request,
+    protected Object invoke(final Request request,
                             final DispatchType dispatchType,
-                            InvokeType invokeType) throws RemotingException, InterruptedException {
+                            InvokeType invokeType,
+                            ChannelGroup... channelGroup) throws RemotingException, InterruptedException {
+
         switch (invokeType) {
             case SYNC: {
-                ResponseCommand responseCommand = consumer
-                        .client()
-                        .invokeSync(channelGroup.remoteAddress(),
-                                request.getRequestCommand(),
-                                timeoutMillis);
-
-                if (responseCommand.getStatus() == ResponseStatus.SUCCESS.value()) {
-                    ResponseWrapper responseWrapper = getSerializer().deserialize(responseCommand.getBody(), ResponseWrapper.class);
-                    return responseWrapper.getResult();
-
-                } else {
-                    ResponseWrapper responseWrapper = getSerializer().deserialize(responseCommand.getBody(), ResponseWrapper.class);
-                    logger.warn("[INVOKE FAIL] directory: {}, method: {}, message: {}",
-                            request.getRequestWrapper().getServiceMeta().directory(),
-                            request.getRequestWrapper().getMethodName(),
-                            responseWrapper.getResult());
-                    return null;
+                if (dispatchType == DispatchType.BROADCAST) {
+                    throw new UnsupportedOperationException("syncInvoke Unsupported broadcast dispatch!");
                 }
+                return invokeSync(request, channelGroup[0]);
             }
             case ASYNC: {
-                RpcFuture future = new RpcFuture();
-                RpcContext.setFuture(future);
-                consumer.client().invokeAsync(
-                        channelGroup.remoteAddress(),
-                        request.getRequestCommand(),
-                        timeoutMillis,
-                        new InvokeCallback<ResponseCommand>() {
-                            @Override
-                            public void operationComplete(ResponseFuture<ResponseCommand> responseFuture) {
-                                RpcFutureListener listener = future.getListener();
-
-                                if (responseFuture.isSuccess()) {
-                                    ResponseCommand responseCommand = responseFuture.result();
-                                    ResponseWrapper responseWrapper = getSerializer().deserialize(responseCommand.getBody(), ResponseWrapper.class);
-                                    future.complete(responseWrapper.getResult());
-                                    if (listener != null) {
-                                        listener.complete(responseWrapper.getResult());
-                                    }
-                                } else {
-                                    future.complete(null);
-                                    if (listener != null) {
-                                        listener.failure(responseFuture.cause());
-                                    }
-                                }
-                            }
-                        });
-
+                invokeAsync(request, dispatchType, channelGroup);
                 return null;
             }
             case ONE_WAY: {
-                consumer.client().invokeOneWay(channelGroup.remoteAddress(),
-                                request.getRequestCommand(),
-                                timeoutMillis);
+                invokeOneWay(request, dispatchType, channelGroup);
+                return null;
             }
             default: {
-                String errorMessage = String.format("DefaultProviderProcessor Unsupported InvokeType: %d",
-                        invokeType.name());
+                String errorMessage = String.format("Unsupported InvokeType: %s", invokeType.name());
                 throw new UnsupportedOperationException(errorMessage);
             }
         }
 
+    }
+
+    private Object invokeSync(Request request, ChannelGroup channelGroup) throws RemotingException, InterruptedException {
+        ResponseCommand responseCommand = consumer
+                .client()
+                .invokeSync(channelGroup.remoteAddress(),
+                        request.getRequestCommand(),
+                        timeoutMillis);
+
+        ResponseWrapper responseWrapper = getSerializer().deserialize(responseCommand.getBody(), ResponseWrapper.class);
+        if (responseCommand.getStatus() == ResponseStatus.SUCCESS.value()) {
+            return responseWrapper.getResult();
+        } else {
+            logger.warn("[INVOKE FAIL] directory: {}, method: {}, message: {}",
+                    request.getRequestWrapper().getServiceMeta().directory(),
+                    request.getRequestWrapper().getMethodName(),
+                    responseWrapper.getResult());
+            return null;
+        }
+    }
+
+    private void invokeAsync(Request request, DispatchType dispatchType, ChannelGroup... channelGroup) throws RemotingException, InterruptedException {
+        switch (dispatchType) {
+            case ROUND: {
+                RpcFuture future = new RpcFuture();
+                RpcContext.setFuture(future);
+                consumer.client().invokeAsync(
+                        channelGroup[0].remoteAddress(),
+                        request.getRequestCommand(),
+                        timeoutMillis,
+                        new InvokeAsyncCallback(future));
+                break;
+            }
+            case BROADCAST: {
+                RpcFuture[] futures = new RpcFuture[channelGroup.length];
+                RpcFutureGroup rpcFutureGroup = new RpcFutureGroup(futures);
+                for (int i = 0; i < channelGroup.length; i++) {
+                    futures[i] = new RpcFuture();
+                    request.getRequestCommand().getAndIncrement();
+                    consumer.client().invokeAsync(
+                            channelGroup[i].remoteAddress(),
+                            request.getRequestCommand(),
+                            timeoutMillis,
+                            new InvokeAsyncCallback(futures[i]));
+                }
+                RpcContext.setRpcFutureGroup(rpcFutureGroup);
+                break;
+            }
+            default: {
+                String errorMessage = String.format("Unsupported DispatchType: %s",
+                        dispatchType.name());
+                throw new UnsupportedOperationException(errorMessage);
+            }
+        }
+
+    }
+
+    private void invokeOneWay(Request request, DispatchType dispatchType, ChannelGroup... channelGroup) throws RemotingException, InterruptedException {
+        switch (dispatchType) {
+            case ROUND: {
+                consumer.client().invokeOneWay(channelGroup[0].remoteAddress(),
+                        request.getRequestCommand(),
+                        timeoutMillis);
+                break;
+            }
+            case BROADCAST: {
+                for (ChannelGroup group : channelGroup) {
+                    request.getRequestCommand().getAndIncrement();
+                    consumer.client().invokeOneWay(group.remoteAddress(),
+                            request.getRequestCommand(),
+                            timeoutMillis);
+                }
+            }
+            default: {
+                String errorMessage = String.format("Unsupported DispatchType: %s",
+                        dispatchType.name());
+                throw new UnsupportedOperationException(errorMessage);
+            }
+        }
+
+    }
+
+    class InvokeAsyncCallback implements InvokeCallback<ResponseCommand> {
+
+        private RpcFuture future;
+
+        public InvokeAsyncCallback(RpcFuture future) {
+            this.future = future;
+        }
+
+        @Override
+        public void operationComplete(ResponseFuture<ResponseCommand> responseFuture) {
+            RpcFutureListener listener = future.getListener();
+
+            if (responseFuture.isSuccess()) {
+                ResponseCommand responseCommand = responseFuture.result();
+                ResponseWrapper responseWrapper = getSerializer().deserialize(responseCommand.getBody(), ResponseWrapper.class);
+                future.complete(responseWrapper.getResult());
+                if (listener != null) {
+                    listener.complete(responseWrapper.getResult());
+                }
+            } else {
+                future.complete(null);
+                if (listener != null) {
+                    listener.failure(responseFuture.cause());
+                }
+            }
+        }
     }
 }

@@ -34,6 +34,10 @@ public class RequestCommand extends ByteHolder {
         return invokeId;
     }
 
+    public long getAndIncrement() {
+        return (invokeId = REQUEST_ID.getAndIncrement());
+    }
+
     public void markOneWay() {
         super.messageCode = ProtocolHead.ONEWAY_REQUEST;
     }
@@ -47,6 +51,7 @@ public class RequestCommand extends ByteHolder {
         return "RequestCommand{" +
                 "timestamp=" + timestamp +
                 ", invokeId=" + invokeId +
+                ", messageCode=" + messageCode +
                 '}';
     }
 }

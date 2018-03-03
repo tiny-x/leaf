@@ -43,6 +43,7 @@ public class ResponseCommand extends ByteHolder {
         return "ResponseCommand{" +
                 "status=" + status +
                 ", invokeId=" + invokeId +
+                ", messageCode=" + messageCode +
                 '}';
     }
 }

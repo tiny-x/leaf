@@ -11,4 +11,6 @@ public interface InvokeFuture<V> {
     V get();
 
     V get(long timeOut, TimeUnit timeUnit);
+
+    void addListener(RpcFutureListener<V> listener);
 }

@@ -34,12 +34,15 @@ import org.slf4j.LoggerFactory;
 
 import java.net.SocketAddress;
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
 public class NettyClient extends NettyServiceAbstract implements RpcClient {
 
     private static final Logger logger = LoggerFactory.getLogger(NettyClient.class);
+
+    private static final int AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
 
     private final Bootstrap bootstrap = new Bootstrap();
 
@@ -57,6 +60,10 @@ public class NettyClient extends NettyServiceAbstract implements RpcClient {
 
     private final ChannelEventListener channelEventListener;
 
+    private final ExecutorService publicExecutorService;
+
+    private final ScheduledExecutorService scanResponseTableExecutorService;
+
     public NettyClient(NettyClientConfig config) {
         this(config, null);
     }
@@ -65,6 +72,27 @@ public class NettyClient extends NettyServiceAbstract implements RpcClient {
         super(config.getClientAsyncSemaphoreValue(), config.getClientOnewaySemaphoreValue());
         this.config = config;
         this.channelEventListener = listener;
+
+        this.publicExecutorService = Executors.newFixedThreadPool(AVAILABLE_PROCESSORS, new ThreadFactory() {
+
+            AtomicInteger atomicInteger = new AtomicInteger(0);
+
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setName("PUBLIC#EXECUTOR#" + atomicInteger);
+                return thread;
+            }
+        });
+
+        scanResponseTableExecutorService = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
+            @Override
+            public Thread newThread(Runnable r) {
+                Thread thread = new Thread(r);
+                thread.setName("SCAN#RESPONSE#TABLE");
+                return thread;
+            }
+        });
     }
 
     @Override
@@ -192,6 +220,11 @@ public class NettyClient extends NettyServiceAbstract implements RpcClient {
     }
 
     @Override
+    protected ExecutorService publicExecutorService() {
+        return publicExecutorService;
+    }
+
+    @Override
     public void start() {
         bootstrap.group(nioEventLoopGroupWorker)
                 .channel(NioSocketChannel.class)
@@ -207,6 +240,17 @@ public class NettyClient extends NettyServiceAbstract implements RpcClient {
                         socketChannel.pipeline().addLast(nettyConnectManageHandler);
                     }
                 });
+
+        this.scanResponseTableExecutorService.scheduleAtFixedRate(new Runnable() {
+            @Override
+            public void run() {
+                try {
+                    scanResponseTable();
+                } catch (Throwable e) {
+                    logger.error("scanResponseTable exception", e);
+                }
+            }
+        }, 1000 * 3, 100000, TimeUnit.MILLISECONDS);
 
         if (channelEventListener != null) {
             new Thread(channelEventExecutor).start();

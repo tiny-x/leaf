@@ -40,6 +40,8 @@ public class DefaultProviderProcessor implements RequestProcessor {
         Serializer serializer = SerializerFactory.serializer(SerializerType.parse(request.getSerializerCode()));
         switch (request.getMessageCode()) {
             case ProtocolHead.REQUEST: {
+            }
+            case ProtocolHead.ONEWAY_REQUEST: {
                 RequestWrapper requestWrapper = serializer.deserialize(request.getBody(), RequestWrapper.class);
                 ServiceWrapper serviceWrapper = provider.lookupService(requestWrapper.getServiceMeta());
 
