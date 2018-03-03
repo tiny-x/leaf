@@ -26,7 +26,6 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.*;
 
-
 public abstract class NettyServiceAbstract {
 
     private static final Logger logger = LoggerFactory.getLogger(NettyServiceAbstract.class);

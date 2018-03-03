@@ -58,7 +58,7 @@ public abstract class AbstractInvoker {
             case FAIL_OVER:
                 return new FailOverClusterInvoker(dispatcher, strategy.getRetries());
             default:
-                throw new UnsupportedOperationException("strategy: " + strategy);
+                throw new UnsupportedOperationException("unsupported strategy: " + strategy);
         }
     }
 }

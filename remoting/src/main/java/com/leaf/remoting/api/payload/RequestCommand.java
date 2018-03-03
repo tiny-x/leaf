@@ -1,10 +1,11 @@
 package com.leaf.remoting.api.payload;
 
 import com.leaf.common.ProtocolHead;
+import com.leaf.common.utils.AnyThrow;
 
 import java.util.concurrent.atomic.AtomicLong;
 
-public class RequestCommand extends ByteHolder {
+public class RequestCommand extends ByteHolder implements Cloneable {
 
     private static final AtomicLong REQUEST_ID = new AtomicLong(0L);
 
@@ -34,10 +35,6 @@ public class RequestCommand extends ByteHolder {
         return invokeId;
     }
 
-    public long getAndIncrement() {
-        return (invokeId = REQUEST_ID.getAndIncrement());
-    }
-
     public void markOneWay() {
         super.messageCode = ProtocolHead.ONEWAY_REQUEST;
     }
@@ -53,5 +50,17 @@ public class RequestCommand extends ByteHolder {
                 ", invokeId=" + invokeId +
                 ", messageCode=" + messageCode +
                 '}';
+    }
+
+    @Override
+    public RequestCommand clone() {
+        RequestCommand clone = null;
+        try {
+            clone = (RequestCommand) super.clone();
+        } catch (CloneNotSupportedException e) {
+            AnyThrow.throwUnchecked(e);
+        }
+        clone.invokeId = REQUEST_ID.getAndIncrement();
+        return clone;
     }
 }

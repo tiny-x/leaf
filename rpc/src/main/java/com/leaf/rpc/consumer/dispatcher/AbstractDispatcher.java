@@ -142,10 +142,9 @@ public abstract class AbstractDispatcher implements Dispatcher {
                 RpcFutureGroup rpcFutureGroup = new RpcFutureGroup(futures);
                 for (int i = 0; i < channelGroup.length; i++) {
                     futures[i] = new RpcFuture();
-                    request.getRequestCommand().getAndIncrement();
                     consumer.client().invokeAsync(
                             channelGroup[i].remoteAddress(),
-                            request.getRequestCommand(),
+                            request.getRequestCommand().clone(),
                             timeoutMillis,
                             new InvokeAsyncCallback(futures[i]));
                 }
@@ -170,10 +169,9 @@ public abstract class AbstractDispatcher implements Dispatcher {
                 break;
             }
             case BROADCAST: {
-                for (ChannelGroup group : channelGroup) {
-                    request.getRequestCommand().getAndIncrement();
-                    consumer.client().invokeOneWay(group.remoteAddress(),
-                            request.getRequestCommand(),
+                for (int i = 0; i < channelGroup.length; i++) {
+                    consumer.client().invokeOneWay(channelGroup[i].remoteAddress(),
+                            request.getRequestCommand().clone(),
                             timeoutMillis);
                 }
             }
