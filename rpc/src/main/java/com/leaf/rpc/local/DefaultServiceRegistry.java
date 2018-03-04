@@ -1,7 +1,13 @@
 package com.leaf.rpc.local;
 
+import com.leaf.common.annotation.ServiceInterface;
+import com.leaf.common.annotation.ServiceProvider;
+import com.leaf.common.constants.Constants;
 import com.leaf.common.model.ServiceWrapper;
 import com.leaf.rpc.container.ServiceProviderContainer;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 public final class DefaultServiceRegistry implements ServiceRegistry {
 
@@ -56,7 +62,59 @@ public final class DefaultServiceRegistry implements ServiceRegistry {
 
     @Override
     public ServiceWrapper register() {
-        ServiceWrapper wrapper = new ServiceWrapper(group, providerName, version, serviceProvider);
+
+        checkNotNull(serviceProvider,"serviceProvider");
+
+        ServiceProvider annotationProvider = this.serviceProvider.getClass().getAnnotation(ServiceProvider.class);
+        ServiceInterface annotationInterface = null;
+
+        for (Class<?> aClass : this.serviceProvider.getClass().getInterfaces()) {
+            annotationInterface = aClass.getAnnotation(ServiceInterface.class);
+            if (annotationInterface != null) {
+                checkArgument(
+                        interfaceClass == null,
+                        serviceProvider.getClass().getName()
+                                + " has a @ServiceProvider annotation, can't set [interfaceClass] again"
+                );
+                interfaceClass = aClass;
+                break;
+            }
+        }
+
+        checkNotNull(interfaceClass,"interfaceClass");
+
+        if (annotationProvider != null) {
+            checkArgument(
+                    version == null,
+                    serviceProvider.getClass().getName()
+                            + " has a @ServiceProvider annotation, can't set [version] again"
+            );
+
+            checkArgument(
+                    weight == 0,
+                    serviceProvider.getClass().getName()
+                            + " has a @ServiceProvider annotation, can't set [weight] again"
+            );
+
+            version = annotationProvider.version();
+            weight = annotationProvider.weight();
+        }
+
+        if (annotationInterface != null) {
+            checkArgument(
+                    group == null,
+                    interfaceClass.getName() + " has a @ServiceInterface annotation, can't set [group] again"
+            );
+            group = annotationInterface.group();
+        }
+
+        checkNotNull(group,"group");
+
+        ServiceWrapper wrapper = new ServiceWrapper(
+                group,
+                providerName == null ? interfaceClass.getName() : providerName,
+                version == null ? Constants.SERVICE_VERSION : version,
+                serviceProvider);
 
         serviceProviderContainer.registerService(wrapper.getServiceMeta().directory(), wrapper);
 

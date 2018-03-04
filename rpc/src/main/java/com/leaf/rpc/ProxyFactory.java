@@ -1,5 +1,10 @@
 package com.leaf.rpc;
 
+import com.google.common.base.Strings;
+import com.leaf.common.UnresolvedAddress;
+import com.leaf.common.annotation.ServiceInterface;
+import com.leaf.common.constants.Constants;
+import com.leaf.common.model.Directory;
 import com.leaf.common.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.common.utils.Proxies;
@@ -19,6 +24,13 @@ import com.leaf.rpc.consumer.invoke.DefaultInvoker;
 import com.leaf.serialization.api.SerializerType;
 import io.netty.util.internal.SystemPropertyUtil;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 
 public class ProxyFactory {
 
@@ -29,8 +41,16 @@ public class ProxyFactory {
                 (byte) SystemPropertyUtil.getInt("serializer.serializerType", SerializerType.PROTO_STUFF.value()));
     }
 
-    private ServiceMeta serviceMeta;
-    private Class<?> interfaces;
+    private String group;
+
+    private String serviceProviderName;
+
+    private String version;
+
+    private List<UnresolvedAddress> addresses;
+
+    private Class<?> interfaceClass;
+
     private Consumer consumer;
     private long timeoutMillis;
     private InvokeType invokeType = InvokeType.SYNC;
@@ -38,15 +58,30 @@ public class ProxyFactory {
     private int retries = 0;
     private Dispatcher dispatcher;
 
-    public static ProxyFactory factory(Class<?> interfaces) {
+    private ProxyFactory() {
+    }
 
+    public static ProxyFactory factory(Class<?> interfaceClass) {
         ProxyFactory proxyFactory = new ProxyFactory();
-        proxyFactory.interfaces = interfaces;
+        proxyFactory.interfaceClass = interfaceClass;
+        proxyFactory.addresses = new ArrayList<>();
+        proxyFactory.serviceProviderName = interfaceClass.getName();
         return proxyFactory;
     }
 
-    public ProxyFactory directory(ServiceMeta serviceMeta) {
-        this.serviceMeta = serviceMeta;
+    public ProxyFactory group(String group) {
+        this.group = group;
+        return this;
+    }
+
+    public ProxyFactory version(String version) {
+        this.version = version;
+        return this;
+    }
+
+    public ProxyFactory directory(Directory directory) {
+        this.group(directory.getGroup())
+                .version(directory.getVersion());
         return this;
     }
 
@@ -70,8 +105,14 @@ public class ProxyFactory {
         return this;
     }
 
+
     public ProxyFactory retries(int retries) {
         this.retries = retries;
+        return this;
+    }
+
+    public ProxyFactory providers(UnresolvedAddress... addresses) {
+        Collections.addAll(this.addresses,  addresses);
         return this;
     }
 
@@ -98,13 +139,24 @@ public class ProxyFactory {
 
     @SuppressWarnings("unchecked")
     public <T> T newProxy() {
-        if (dispatcher == null) {
-            dispatcher = new DefaultRoundDispatcher(
-                    consumer,
-                    RandomRobinLoadBalancer.instance(),
-                    serializerType);
+
+        checkNotNull(interfaceClass, "interfaceClass");
+        ServiceInterface annotationInterface = interfaceClass.getAnnotation(ServiceInterface.class);
+        if (annotationInterface != null) {
+            checkArgument(
+                    group == null,
+                    interfaceClass.getName() + " has a @ServiceInterface annotation, can't set [group] again"
+            );
+            group = annotationInterface.group();
         }
-        dispatcher.timeoutMillis(timeoutMillis);
+
+        ServiceMeta serviceMeta = new ServiceMeta(group,
+                serviceProviderName,
+                Strings.isNullOrEmpty(version) ? Constants.SERVICE_VERSION : version);
+
+        for (UnresolvedAddress address : addresses) {
+            consumer.client().addChannelGroup(serviceMeta, address);
+        }
 
         if (consumer.registerService() != null) {
             consumer.subscribe(serviceMeta, new NotifyListener() {
@@ -140,8 +192,16 @@ public class ProxyFactory {
             });
         }
 
+        if (dispatcher == null) {
+            dispatcher = new DefaultRoundDispatcher(
+                    consumer,
+                    RandomRobinLoadBalancer.instance(),
+                    serializerType);
+        }
+        dispatcher.timeoutMillis(timeoutMillis);
+
         return (T) Proxies.getDefault().newProxy(
-                interfaces,
+                interfaceClass,
                 new DefaultInvoker(
                         consumer.application(),
                         dispatcher,

@@ -44,7 +44,9 @@ public class ResponseFuture<T> {
     public ResponseFuture(long timeoutMillis, InvokeCallback invokeCallback, Semaphore semaphore) {
         this.timeoutMillis = timeoutMillis;
         this.invokeCallback = invokeCallback;
-        this.semaphoreReleaseOnce = new SemaphoreReleaseOnce(semaphore);
+        if (semaphore != null) {
+            this.semaphoreReleaseOnce = new SemaphoreReleaseOnce(semaphore);
+        }
     }
 
     public T get() throws InterruptedException {

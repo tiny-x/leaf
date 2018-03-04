@@ -19,17 +19,24 @@ public class ConsumerBroadcastExample {
     public static void main(String[] args) {
         NettyClientConfig config = new NettyClientConfig();
         Consumer consumer = new DefaultConsumer("consumer", config);
-        UnresolvedAddress address = new UnresolvedAddress("127.0.0.1", 9180);
-        UnresolvedAddress address2 = new UnresolvedAddress("127.0.0.1", 9181);
-        UnresolvedAddress address3 = new UnresolvedAddress("127.0.0.1", 9182);
-        consumer.connect(address);
-        consumer.connect(address2);
-        consumer.connect(address3);
+        UnresolvedAddress[] addresses = new UnresolvedAddress[] {
+                new UnresolvedAddress("127.0.0.1", 9180),
+                new UnresolvedAddress("127.0.0.1", 9180),
+                new UnresolvedAddress("127.0.0.1", 9181),
+                new UnresolvedAddress("127.0.0.1", 9181),
+                new UnresolvedAddress("127.0.0.1", 9182),
+                new UnresolvedAddress("127.0.0.1", 9182),
+        };
 
-        ServiceMeta serviceMeta = new ServiceMeta("test", "org.rpc.example.demo.HelloService", "1.0.0");
-        consumer.client().addChannelGroup(serviceMeta, address);
-        consumer.client().addChannelGroup(serviceMeta, address2);
-        consumer.client().addChannelGroup(serviceMeta, address3);
+        ServiceMeta serviceMeta = new ServiceMeta(
+                "test",
+                "org.rpc.example.demo.HelloService",
+                "1.0.0");
+
+        for (UnresolvedAddress address : addresses) {
+            consumer.connect(address);
+            consumer.client().addChannelGroup(serviceMeta, address);
+        }
 
         HelloService helloService = ProxyFactory.factory(HelloService.class)
                 .consumer(consumer)

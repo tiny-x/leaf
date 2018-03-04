@@ -1,6 +1,6 @@
 package com.leaf.example.benchmark;
 
-import com.leaf.example.demo.ConsumerExample;
+import com.leaf.example.demo.basic.ConsumerExample;
 import org.openjdk.jmh.annotations.*;
 import org.openjdk.jmh.runner.Runner;
 import org.openjdk.jmh.runner.RunnerException;
