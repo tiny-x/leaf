@@ -1,4 +1,4 @@
-package com.leaf.common.collection;
+package com.leaf.common.concurrent;
 
 import java.io.Serializable;
 import java.util.AbstractSet;

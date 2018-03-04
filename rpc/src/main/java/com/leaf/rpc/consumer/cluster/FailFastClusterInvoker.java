@@ -19,7 +19,7 @@ public class FailFastClusterInvoker implements ClusterInvoker {
     }
 
     @Override
-    public Object invoke(Request request, InvokeType invokeType) throws Exception {
-        return dispatcher.dispatch(request, invokeType);
+    public Object invoke(Request request, Class<?> returnType, InvokeType invokeType) throws Throwable {
+        return dispatcher.dispatch(request, returnType, invokeType);
     }
 }

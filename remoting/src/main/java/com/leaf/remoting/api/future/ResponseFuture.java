@@ -24,8 +24,6 @@ public class ResponseFuture<T> {
 
     private T result;
 
-    private volatile boolean success = false;
-
     private long timeoutMillis;
 
     public void executeInvokeCallback() {
@@ -66,14 +64,6 @@ public class ResponseFuture<T> {
 
     public T result() {
         return result;
-    }
-
-    public boolean isSuccess() {
-        return success;
-    }
-
-    public void setSuccess(boolean success) {
-        this.success = success;
     }
 
     public InvokeCallback<T> getInvokeCallback() {

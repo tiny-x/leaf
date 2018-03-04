@@ -1,15 +1,16 @@
 package com.leaf.rpc.consumer.future;
 
-import com.leaf.common.utils.AnyThrow;
-
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class RpcFuture<V> implements InvokeFuture<V> {
 
     private V v;
 
     private CountDownLatch countDownLatch = new CountDownLatch(1);
+
+    private AtomicBoolean notifyOnce = new AtomicBoolean(false);
 
     private RpcFutureListener<V> listener;
 
@@ -25,22 +26,38 @@ public class RpcFuture<V> implements InvokeFuture<V> {
     }
 
     @Override
-    public V get(long timeOut, TimeUnit timeUnit) {
-        return null;
+    public V get(long timeout, TimeUnit timeUnit) throws Throwable {
+        countDownLatch.await(timeout, timeUnit);
+        if (v instanceof Throwable) {
+            throw (Throwable) v;
+        }
+        return v;
     }
 
     @Override
-    public V get() {
-        try {
-            countDownLatch.await();
-        } catch (InterruptedException ignore) {
-            AnyThrow.throwUnchecked(ignore);
+    public V get() throws Throwable {
+        countDownLatch.await();
+        if (v instanceof Throwable) {
+            throw (Throwable) v;
         }
         return v;
     }
 
     public void addListener(RpcFutureListener<V> listener) {
         this.listener = listener;
+        if (isDone()) {
+            notifyListener(v);
+        }
+    }
+
+    public void notifyListener(Object x) {
+        if (listener != null && notifyOnce.compareAndSet(false, true)) {
+            if (x instanceof Throwable) {
+                listener.failure((Throwable) x);
+            } else {
+                listener.complete((V) x);
+            }
+        }
     }
 
     public RpcFutureListener<V> getListener() {

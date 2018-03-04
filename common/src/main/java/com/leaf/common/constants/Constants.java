@@ -10,4 +10,8 @@ public class Constants {
     
     public static final int SERVICE_WEIGHT = 50;
 
+    public static final long DEFAULT_INVOKE_TIMEOUT = 3000L;
+
+
+
 }

@@ -2,7 +2,7 @@ package com.leaf.register.api;
 
 
 import com.leaf.common.UnresolvedAddress;
-import com.leaf.common.collection.ConcurrentSet;
+import com.leaf.common.concurrent.ConcurrentSet;
 import com.leaf.common.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
 import org.slf4j.Logger;

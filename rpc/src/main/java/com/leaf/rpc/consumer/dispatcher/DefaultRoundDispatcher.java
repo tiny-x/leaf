@@ -20,7 +20,7 @@ public class DefaultRoundDispatcher extends AbstractDispatcher {
     }
 
     @Override
-    public <T> T dispatch(Request request, InvokeType invokeType) throws RemotingException, InterruptedException {
+    public <T> T dispatch(Request request, Class<?> returnType, InvokeType invokeType) throws Throwable {
 
         final RequestWrapper requestWrapper = request.getRequestWrapper();
 
@@ -32,6 +32,8 @@ public class DefaultRoundDispatcher extends AbstractDispatcher {
         RequestCommand requestCommand = new RequestCommand(ProtocolHead.REQUEST, getSerializerCode(), bytes);
         request.setRequestCommand(requestCommand);
 
-        return (T) invoke(request, DispatchType.ROUND, invokeType, channelGroup);
+        Object result = invoke(request, DispatchType.ROUND, returnType, invokeType, channelGroup);
+
+        return (T) result;
     }
 }

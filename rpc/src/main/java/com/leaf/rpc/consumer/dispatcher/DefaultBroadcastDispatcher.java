@@ -2,9 +2,9 @@ package com.leaf.rpc.consumer.dispatcher;
 
 import com.leaf.common.ProtocolHead;
 import com.leaf.common.model.RequestWrapper;
+import com.leaf.common.utils.Reflects;
 import com.leaf.remoting.api.channel.ChannelGroup;
 import com.leaf.remoting.api.payload.RequestCommand;
-import com.leaf.remoting.exception.RemotingException;
 import com.leaf.rpc.Request;
 import com.leaf.rpc.balancer.LoadBalancer;
 import com.leaf.rpc.consumer.Consumer;
@@ -23,7 +23,7 @@ public class DefaultBroadcastDispatcher extends AbstractDispatcher {
     }
 
     @Override
-    public <T> T dispatch(Request request, InvokeType invokeType) throws RemotingException, InterruptedException {
+    public <T> T dispatch(Request request, Class<?> returnType, InvokeType invokeType) throws Throwable {
         final RequestWrapper requestWrapper = request.getRequestWrapper();
 
         Serializer serializer = getSerializer();
@@ -33,8 +33,8 @@ public class DefaultBroadcastDispatcher extends AbstractDispatcher {
         request.setRequestCommand(requestCommand);
 
         ChannelGroup[] groups = groups(requestWrapper.getServiceMeta());
-        invoke(request, DispatchType.BROADCAST, invokeType, groups);
+        invoke(request, DispatchType.BROADCAST, returnType, invokeType, groups);
 
-        return null;
+        return (T) Reflects.getTypeDefaultValue(returnType);
     }
 }

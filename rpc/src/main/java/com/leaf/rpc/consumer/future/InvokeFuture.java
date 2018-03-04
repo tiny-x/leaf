@@ -8,9 +8,9 @@ public interface InvokeFuture<V> {
 
     boolean isDone();
 
-    V get();
+    V get() throws Throwable;
 
-    V get(long timeOut, TimeUnit timeUnit);
+    V get(long timeout, TimeUnit timeUnit) throws Throwable;
 
     void addListener(RpcFutureListener<V> listener);
 }

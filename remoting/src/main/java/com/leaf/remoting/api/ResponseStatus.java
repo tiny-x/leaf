@@ -8,6 +8,7 @@ public enum ResponseStatus {
     CLIENT_ERROR((byte) 0x04, "CLIENT_ERROR"),
     SERVER_ERROR((byte) 0x05, "SERVER_ERROR"),
     SYSTEM_BUSY((byte) 0x06, "SYSTEM_BUSY"),
+    SERVICE_ERROR((byte) 0x07, "SERVICE_ERROR"),
 
     FLOW_CONTROL((byte) 0x08, "FLOW_CONTROL"),
     SERVICE_NOT_FOUND((byte) 0x09, "GLOBAL_FLOW_CONTROL"),

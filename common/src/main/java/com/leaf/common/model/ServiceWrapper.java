@@ -43,4 +43,12 @@ public class ServiceWrapper {
     public void setWeight(int weight) {
         this.weight = weight;
     }
+
+    @Override
+    public String toString() {
+        return "ServiceWrapper{" +
+                "serviceProvider=" + serviceProvider +
+                ", weight=" + weight +
+                '}';
+    }
 }

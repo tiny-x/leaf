@@ -36,7 +36,7 @@ public abstract class AbstractInvoker {
         this.invokeType = invokeType;
     }
 
-    public Object doInvoke(String methodName, Object... args) throws Exception {
+    public Object doInvoke(String methodName, Class<?> returnType, Object... args) throws Throwable {
         RequestWrapper requestWrapper = new RequestWrapper();
         requestWrapper.setApplication(application);
         requestWrapper.setMethodName(methodName);
@@ -47,7 +47,7 @@ public abstract class AbstractInvoker {
         request.setRequestWrapper(requestWrapper);
 
         ClusterInvoker clusterInvoker = createClusterInvoker(dispatcher, strategyConfig);
-        return clusterInvoker.invoke(request, invokeType);
+        return clusterInvoker.invoke(request, returnType,invokeType);
     }
 
     private ClusterInvoker createClusterInvoker(Dispatcher dispatcher, StrategyConfig strategy) {

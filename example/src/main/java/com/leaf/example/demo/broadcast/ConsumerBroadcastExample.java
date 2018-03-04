@@ -64,7 +64,11 @@ public class ConsumerBroadcastExample {
         InvokeFuture[] futures = rpcFutureGroup.futures();
 
         for (InvokeFuture future : futures) {
-            System.out.println("------>: " + future.get());
+            try {
+                System.out.println("------>: " + future.get());
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
         }
 
     }

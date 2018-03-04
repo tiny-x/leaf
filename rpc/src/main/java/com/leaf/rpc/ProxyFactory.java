@@ -198,7 +198,7 @@ public class ProxyFactory {
                     RandomRobinLoadBalancer.instance(),
                     serializerType);
         }
-        dispatcher.timeoutMillis(timeoutMillis);
+        dispatcher.timeoutMillis(timeoutMillis <= 0 ? Constants.DEFAULT_INVOKE_TIMEOUT : timeoutMillis);
 
         return (T) Proxies.getDefault().newProxy(
                 interfaceClass,

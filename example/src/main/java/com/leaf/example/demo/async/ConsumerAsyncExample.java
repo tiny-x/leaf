@@ -45,7 +45,11 @@ public class ConsumerAsyncExample {
                 System.out.println("error: " + cause);
             }
         });
-        System.out.println(future.get());
+        try {
+            System.out.println(future.get());
+        } catch (Throwable throwable) {
+            throwable.printStackTrace();
+        }
 
     }
 }

@@ -1,9 +1,6 @@
 package com.leaf.example.demo.annotation;
 
 import com.leaf.common.UnresolvedAddress;
-import com.leaf.common.model.ServiceMeta;
-import com.leaf.example.demo.HelloService;
-import com.leaf.remoting.netty.NettyClientConfig;
 import com.leaf.rpc.ProxyFactory;
 import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.DefaultConsumer;

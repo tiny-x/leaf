@@ -73,7 +73,6 @@ public abstract class NettyServiceAbstract {
             if ((responseFuture.getBeginTimestamp() + responseFuture.getTimeoutMillis() + 1000) <= System.currentTimeMillis()) {
                 it.remove();
                 responseFuture.release();
-                responseFuture.setSuccess(false);
                 responseFuture.failure(
                         new RemotingTimeoutException("remove timeout request! timeout:" + responseFuture.getTimeoutMillis()));
                 responseFutureList.add(responseFuture);
@@ -96,7 +95,6 @@ public abstract class NettyServiceAbstract {
 
         if (future != null) {
             responseTable.remove(invokeId);
-            future.setSuccess(true);
             future.complete(cmd);
             future.release();
 
@@ -208,7 +206,6 @@ public abstract class NettyServiceAbstract {
             channel.writeAndFlush(request).addListener((ChannelFuture future) -> {
                 if (!future.isSuccess()) {
                     responseTable.remove(request.getInvokeId());
-                    responseFuture.setSuccess(false);
                     responseFuture.complete(null);
                     responseFuture.failure(future.cause());
                     logger.warn("send a request command to channel <" + channel + "> failed.");
@@ -216,7 +213,7 @@ public abstract class NettyServiceAbstract {
             });
             ResponseCommand response = responseFuture.get(timeout, timeUnit);
             if (response == null) {
-                if (responseFuture.isSuccess()) {
+                if (responseFuture.cause() == null) {
                     throw new RemotingTimeoutException(channel.remoteAddress().toString(),
                             timeUnit.convert(timeout, TimeUnit.MILLISECONDS));
                 } else {
@@ -247,7 +244,6 @@ public abstract class NettyServiceAbstract {
 
                     if (!future.isSuccess()) {
                         responseTable.remove(request.getInvokeId());
-                        responseFuture.setSuccess(false);
                         responseFuture.complete(null);
                         responseFuture.executeInvokeCallback();
                         responseFuture.failure(future.cause());

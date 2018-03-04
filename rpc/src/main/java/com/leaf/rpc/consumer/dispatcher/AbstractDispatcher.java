@@ -2,6 +2,7 @@ package com.leaf.rpc.consumer.dispatcher;
 
 import com.leaf.common.model.ResponseWrapper;
 import com.leaf.common.model.ServiceMeta;
+import com.leaf.common.utils.Reflects;
 import com.leaf.remoting.api.InvokeCallback;
 import com.leaf.remoting.api.ResponseStatus;
 import com.leaf.remoting.api.channel.ChannelGroup;
@@ -19,14 +20,11 @@ import com.leaf.rpc.consumer.future.RpcFutureListener;
 import com.leaf.serialization.api.Serializer;
 import com.leaf.serialization.api.SerializerFactory;
 import com.leaf.serialization.api.SerializerType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class AbstractDispatcher implements Dispatcher {
 
-    private static final Logger logger = LoggerFactory.getLogger(AbstractDispatcher.class);
     protected long timeoutMillis;
     private Consumer consumer;
     private LoadBalancer loadBalancer;
@@ -80,8 +78,9 @@ public abstract class AbstractDispatcher implements Dispatcher {
 
     protected Object invoke(final Request request,
                             final DispatchType dispatchType,
+                            Class<?> returnType,
                             InvokeType invokeType,
-                            ChannelGroup... channelGroup) throws RemotingException, InterruptedException {
+                            ChannelGroup... channelGroup) throws Throwable {
 
         switch (invokeType) {
             case SYNC: {
@@ -92,11 +91,11 @@ public abstract class AbstractDispatcher implements Dispatcher {
             }
             case ASYNC: {
                 invokeAsync(request, dispatchType, channelGroup);
-                return null;
+                return Reflects.getTypeDefaultValue(returnType);
             }
             case ONE_WAY: {
                 invokeOneWay(request, dispatchType, channelGroup);
-                return null;
+                return Reflects.getTypeDefaultValue(returnType);
             }
             default: {
                 String errorMessage = String.format("Unsupported InvokeType: %s", invokeType.name());
@@ -106,7 +105,7 @@ public abstract class AbstractDispatcher implements Dispatcher {
 
     }
 
-    private Object invokeSync(Request request, ChannelGroup channelGroup) throws RemotingException, InterruptedException {
+    private Object invokeSync(Request request, ChannelGroup channelGroup) throws Throwable {
         ResponseCommand responseCommand = consumer
                 .client()
                 .invokeSync(channelGroup.remoteAddress(),
@@ -117,15 +116,11 @@ public abstract class AbstractDispatcher implements Dispatcher {
         if (responseCommand.getStatus() == ResponseStatus.SUCCESS.value()) {
             return responseWrapper.getResult();
         } else {
-            logger.warn("[INVOKE FAIL] directory: {}, method: {}, message: {}",
-                    request.getRequestWrapper().getServiceMeta().directory(),
-                    request.getRequestWrapper().getMethodName(),
-                    responseWrapper.getResult());
-            return null;
+            throw handlerException(responseCommand);
         }
     }
 
-    private void invokeAsync(Request request, DispatchType dispatchType, ChannelGroup... channelGroup) throws RemotingException, InterruptedException {
+    private void invokeAsync(Request request, DispatchType dispatchType, ChannelGroup... channelGroup) throws Throwable {
         switch (dispatchType) {
             case ROUND: {
                 RpcFuture future = new RpcFuture();
@@ -160,7 +155,7 @@ public abstract class AbstractDispatcher implements Dispatcher {
 
     }
 
-    private void invokeOneWay(Request request, DispatchType dispatchType, ChannelGroup... channelGroup) throws RemotingException, InterruptedException {
+    private void invokeOneWay(Request request, DispatchType dispatchType, ChannelGroup... channelGroup) throws Throwable {
         switch (dispatchType) {
             case ROUND: {
                 consumer.client().invokeOneWay(channelGroup[0].remoteAddress(),
@@ -184,6 +179,19 @@ public abstract class AbstractDispatcher implements Dispatcher {
 
     }
 
+    // 服务端异常 未找到服务，service抛的异常等
+    private Throwable handlerException(ResponseCommand responseCommand) {
+        Throwable cause;
+        ResponseWrapper responseWrapper = getSerializer().deserialize(responseCommand.getBody(), ResponseWrapper.class);
+
+        if (responseCommand.getStatus() == ResponseStatus.SERVER_ERROR.value()) {
+            cause = (Throwable) responseWrapper.getResult();
+        } else {
+            cause = new RemotingException(responseWrapper.getResult().toString());
+        }
+        return cause;
+    }
+
     class InvokeAsyncCallback implements InvokeCallback<ResponseCommand> {
 
         private RpcFuture future;
@@ -194,20 +202,22 @@ public abstract class AbstractDispatcher implements Dispatcher {
 
         @Override
         public void operationComplete(ResponseFuture<ResponseCommand> responseFuture) {
-            RpcFutureListener listener = future.getListener();
+            ResponseCommand responseCommand = responseFuture.result();
 
-            if (responseFuture.isSuccess()) {
-                ResponseCommand responseCommand = responseFuture.result();
+            if (responseCommand.getStatus() == ResponseStatus.SUCCESS.value()) {
                 ResponseWrapper responseWrapper = getSerializer().deserialize(responseCommand.getBody(), ResponseWrapper.class);
                 future.complete(responseWrapper.getResult());
-                if (listener != null) {
-                    listener.complete(responseWrapper.getResult());
-                }
+                future.notifyListener(responseWrapper.getResult());
             } else {
-                future.complete(null);
-                if (listener != null) {
-                    listener.failure(responseFuture.cause());
+                Throwable cause = null;
+                if (responseFuture.cause() == null) {
+                    cause = handlerException(responseCommand);
+                } else {
+                    // 通常是客户端异常，客户端超时，发送失败等等
+                    cause = responseFuture.cause();
                 }
+                future.complete(cause);
+                future.notifyListener(cause);
             }
         }
     }

@@ -17,6 +17,6 @@ public class GenericInvoke extends AbstractInvoker {
     }
 
     public Object $invoke(String methodName, Object... args) throws Throwable{
-        return doInvoke(methodName, args);
+        return doInvoke(methodName, Object.class, args);
     }
 }

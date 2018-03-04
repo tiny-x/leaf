@@ -24,9 +24,6 @@ import java.util.concurrent.RejectedExecutionException;
 
 public class DefaultProviderProcessor implements RequestProcessor {
 
-    /**
-     * logger
-     */
     private final static Logger logger = LoggerFactory.getLogger(DefaultProviderProcessor.class);
 
     private final Provider provider;
@@ -45,32 +42,45 @@ public class DefaultProviderProcessor implements RequestProcessor {
                 RequestWrapper requestWrapper = serializer.deserialize(request.getBody(), RequestWrapper.class);
                 ServiceWrapper serviceWrapper = provider.lookupService(requestWrapper.getServiceMeta());
 
-                ResponseWrapper responseWrapper = new ResponseWrapper();
-                ResponseCommand responseCommand = null;
+                Object result = null;
                 if (serviceWrapper == null) {
-
                     String message = String.format(
                             "%s service: [%s] not found",
                             context.channel(),
                             requestWrapper.getServiceMeta()
                     );
-                    logger.warn(message);
-                    responseWrapper.setResult(message);
+                    logger.error(message);
                 } else {
-                    Object result = Reflects.Invoke(
-                            serviceWrapper.getServiceProvider(),
-                            requestWrapper.getMethodName(),
-                            requestWrapper.getArgs()
-                    );
-                    responseWrapper.setResult(result);
+                    try {
+                        result = Reflects.Invoke(
+                                serviceWrapper.getServiceProvider(),
+                                requestWrapper.getMethodName(),
+                                requestWrapper.getArgs()
+                        );
+                    } catch (Throwable t) {
+                        logger.error(t.getMessage(), t);
+                        result = t;
+                    }
                 }
 
+                ResponseCommand responseCommand = null;
                 if (!request.isOneWay()) {
+                    ResponseWrapper responseWrapper = new ResponseWrapper();
+                    if (result instanceof Throwable) {
+                        responseWrapper.setCase((Throwable) result);
+                    } else {
+                        responseWrapper.setResult(result);
+                    }
+
                     responseCommand = RemotingCommandFactory.createResponseCommand(
                             request.getSerializerCode(),
                             serializer.serialize(responseWrapper),
                             request.getInvokeId()
                     );
+
+                    if (result instanceof Throwable) {
+                        responseCommand.setStatus(ResponseStatus.SERVER_ERROR.value());
+                    }
                     if (serviceWrapper == null) {
                         responseCommand.setStatus(ResponseStatus.SERVICE_NOT_FOUND.value());
                     }

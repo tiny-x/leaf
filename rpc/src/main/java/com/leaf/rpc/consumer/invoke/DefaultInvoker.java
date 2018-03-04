@@ -23,7 +23,7 @@ public class DefaultInvoker extends AbstractInvoker {
 
     @RuntimeType
     public Object invoke(@Origin Method method, @AllArguments @RuntimeType Object[] args) throws Throwable {
-        return doInvoke(method.getName(), args);
+        return doInvoke(method.getName(), method.getReturnType(), args);
     }
 
 }
