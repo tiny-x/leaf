@@ -44,12 +44,8 @@ public class DefaultProvider implements Provider {
     }
 
     public DefaultProvider(int port, NettyServerConfig nettyServerConfig) {
-        if (nettyServerConfig == null) {
-            this.config = new NettyServerConfig();
-        }
-        if (port != 0) {
-            this.config.setPort(port);
-        }
+        this.config = nettyServerConfig == null ? new NettyServerConfig() : nettyServerConfig;
+        this.config.setPort(port == 0 ? this.config.getPort() : port);
         this.serviceProviderContainer = new DefaultServiceProviderContainer();
         this.server = new NettyServer(config);
     }

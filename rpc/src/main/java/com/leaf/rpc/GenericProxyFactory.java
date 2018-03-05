@@ -1,5 +1,9 @@
 package com.leaf.rpc;
 
+import com.google.common.base.Strings;
+import com.leaf.common.UnresolvedAddress;
+import com.leaf.common.constants.Constants;
+import com.leaf.common.model.Directory;
 import com.leaf.common.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.register.api.NotifyEvent;
@@ -16,6 +20,12 @@ import com.leaf.rpc.consumer.invoke.GenericInvoke;
 import com.leaf.serialization.api.SerializerType;
 import io.netty.util.internal.SystemPropertyUtil;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import static com.google.common.base.Preconditions.checkNotNull;
+
 public class GenericProxyFactory {
 
     private static final SerializerType serializerType;
@@ -25,7 +35,14 @@ public class GenericProxyFactory {
                 (byte) SystemPropertyUtil.getInt("serializer.serializerType", SerializerType.PROTO_STUFF.value()));
     }
 
-    private ServiceMeta serviceMeta;
+    private String group;
+
+    private String serviceProviderName;
+
+    private String version;
+
+    private List<UnresolvedAddress> addresses;
+
     private Consumer consumer;
     private long timeoutMillis;
     private InvokeType invokeType = InvokeType.SYNC;
@@ -34,11 +51,34 @@ public class GenericProxyFactory {
 
     public static GenericProxyFactory factory() {
         GenericProxyFactory proxyFactory = new GenericProxyFactory();
+        proxyFactory.addresses = new ArrayList<>();
         return proxyFactory;
     }
 
-    public GenericProxyFactory directory(ServiceMeta serviceMeta) {
-        this.serviceMeta = serviceMeta;
+    public GenericProxyFactory group(String group) {
+        this.group = group;
+        return this;
+    }
+
+    public GenericProxyFactory serviceProviderName(String serviceProviderName) {
+        this.serviceProviderName = serviceProviderName;
+        return this;
+    }
+
+    public GenericProxyFactory version(String version) {
+        this.version = version;
+        return this;
+    }
+
+    public GenericProxyFactory directory(Directory directory) {
+        this.group(directory.getGroup())
+                .serviceProviderName(directory.getServiceProviderName())
+                .version(directory.getVersion());
+        return this;
+    }
+
+    public GenericProxyFactory providers(UnresolvedAddress... addresses) {
+        Collections.addAll(this.addresses, addresses);
         return this;
     }
 
@@ -69,12 +109,17 @@ public class GenericProxyFactory {
 
     @SuppressWarnings("unchecked")
     public GenericInvoke newProxy() {
-        Dispatcher dispatcher = new DefaultRoundDispatcher(
-                consumer,
-                RandomRobinLoadBalancer.instance(),
-                serializerType);
+        checkNotNull(group, "interfaceClass");
+        checkNotNull(serviceProviderName, "serviceProviderName");
 
-        dispatcher.timeoutMillis(timeoutMillis);
+        ServiceMeta serviceMeta = new ServiceMeta(
+                group,
+                serviceProviderName,
+                Strings.isNullOrEmpty(version) ? Constants.SERVICE_VERSION : version);
+
+        for (UnresolvedAddress address : addresses) {
+            consumer.client().addChannelGroup(serviceMeta, address);
+        }
 
         if (consumer.registerService() != null) {
             consumer.subscribe(serviceMeta, new NotifyListener() {
@@ -86,11 +131,15 @@ public class GenericProxyFactory {
                                 int connCount = registerMeta.getConnCount() < 1 ? 1 : registerMeta.getConnCount();
                                 for (int i = 0; i < connCount; i++) {
                                     consumer.connect(registerMeta.getAddress());
-                                    consumer.client().addChannelGroup(serviceMeta, registerMeta.getAddress());
                                 }
 
-                                consumer.client().group(registerMeta.getAddress())
+                                // 设置channelGroup(相同地址的channel) weight
+                                consumer.client()
+                                        .group(registerMeta.getAddress())
                                         .setWeight(serviceMeta, registerMeta.getWeight());
+
+                                // channelGroup 和 serviceMeta 关系
+                                consumer.client().addChannelGroup(serviceMeta, registerMeta.getAddress());
 
                                 consumer.offlineListening(registerMeta.getAddress(), new OfflineListener() {
                                     @Override
@@ -109,6 +158,13 @@ public class GenericProxyFactory {
                 }
             });
         }
+
+        Dispatcher dispatcher = new DefaultRoundDispatcher(
+                consumer,
+                RandomRobinLoadBalancer.instance(),
+                serializerType);
+
+        dispatcher.timeoutMillis(timeoutMillis);
 
         GenericInvoke genericInvoke = new GenericInvoke(
                 consumer.application(),

@@ -3,23 +3,28 @@ package com.leaf.rpc.consumer.cluster;
 import com.leaf.rpc.Request;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.dispatcher.Dispatcher;
+import com.leaf.rpc.consumer.future.FailSafeInvokeFuture;
 import com.leaf.rpc.consumer.future.InvokeFuture;
 
-public class FailFastClusterInvoker implements ClusterInvoker {
+/**
+ * 同步调用，异常不影响消费者中断
+ */
+public class FailSafeClusterInvoker implements ClusterInvoker {
 
     private final Dispatcher dispatcher;
 
-    public FailFastClusterInvoker(Dispatcher dispatcher) {
+    public FailSafeClusterInvoker(Dispatcher dispatcher) {
         this.dispatcher = dispatcher;
     }
 
     @Override
     public Strategy strategy() {
-        return Strategy.FAIL_FAST;
+        return Strategy.FAIL_SAFE;
     }
 
     @Override
     public <T> InvokeFuture<T> invoke(Request request, Class<T> returnType, InvokeType invokeType) throws Throwable {
-        return dispatcher.dispatch(request, returnType, invokeType);
+        InvokeFuture<T> invokeFuture = dispatcher.dispatch(request, returnType, invokeType);
+        return FailSafeInvokeFuture.with(invokeFuture);
     }
 }

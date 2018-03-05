@@ -4,7 +4,7 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-public class RpcFuture<V> implements InvokeFuture<V> {
+public class DefaultInvokeFuture<V> implements InvokeFuture<V> {
 
     private V v;
 
@@ -12,7 +12,16 @@ public class RpcFuture<V> implements InvokeFuture<V> {
 
     private AtomicBoolean notifyOnce = new AtomicBoolean(false);
 
-    private RpcFutureListener<V> listener;
+    private InvokeFutureListener<V> listener;
+
+    private final Class<V> returnType;
+
+    private final long timeoutMillis;
+
+    public DefaultInvokeFuture(Class<V> returnType, long timeoutMillis) {
+        this.returnType = returnType;
+        this.timeoutMillis = timeoutMillis;
+    }
 
     @Override
     public void complete(V v) {
@@ -43,13 +52,15 @@ public class RpcFuture<V> implements InvokeFuture<V> {
         return v;
     }
 
-    public void addListener(RpcFutureListener<V> listener) {
+    @Override
+    public void addListener(InvokeFutureListener<V> listener) {
         this.listener = listener;
         if (isDone()) {
             notifyListener(v);
         }
     }
 
+    @Override
     public void notifyListener(Object x) {
         if (listener != null && notifyOnce.compareAndSet(false, true)) {
             if (x instanceof Throwable) {
@@ -60,7 +71,13 @@ public class RpcFuture<V> implements InvokeFuture<V> {
         }
     }
 
-    public RpcFutureListener<V> getListener() {
+    @Override
+    public InvokeFutureListener<V> getListener() {
         return listener;
+    }
+
+    @Override
+    public Class<V> returnType() {
+        return returnType;
     }
 }

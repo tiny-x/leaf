@@ -12,5 +12,11 @@ public interface InvokeFuture<V> {
 
     V get(long timeout, TimeUnit timeUnit) throws Throwable;
 
-    void addListener(RpcFutureListener<V> listener);
+    void addListener(InvokeFutureListener<V> listener);
+
+    InvokeFutureListener<V> getListener();
+
+    void notifyListener(Object x);
+
+    Class<V> returnType();
 }

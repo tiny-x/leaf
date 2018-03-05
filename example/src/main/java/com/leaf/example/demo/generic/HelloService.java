@@ -1,4 +1,4 @@
-package com.leaf.example.generic;
+package com.leaf.example.demo.generic;
 
 /**
  * @author yefei

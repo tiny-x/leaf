@@ -28,7 +28,6 @@ import io.netty.util.HashedWheelTimer;
 import io.netty.util.Timeout;
 import io.netty.util.Timer;
 import io.netty.util.TimerTask;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -63,6 +62,8 @@ public class NettyClient extends NettyServiceAbstract implements RpcClient {
     private final ExecutorService publicExecutorService;
 
     private final ScheduledExecutorService scanResponseTableExecutorService;
+
+    private volatile boolean needReconnect = true;
 
     public NettyClient(NettyClientConfig config) {
         this(config, null);
@@ -103,6 +104,7 @@ public class NettyClient extends NettyServiceAbstract implements RpcClient {
 
         if (future.awaitUninterruptibly(config.getConnectTimeoutMillis(), TimeUnit.MILLISECONDS)) {
             if (future.channel() != null && future.channel().isActive()) {
+                // 连接成功 添加channel到channelGroup TODO
                 future.channel().pipeline().addLast(new NettyClientHandler(address));
                 group(address).addChannel(future.channel());
                 logger.info("connect with: {}", future.channel());
@@ -278,8 +280,19 @@ public class NettyClient extends NettyServiceAbstract implements RpcClient {
 
         private UnresolvedAddress address;
 
+        private int reties;
+
         public NettyClientHandler(UnresolvedAddress address) {
             this.address = address;
+        }
+
+        @Override
+        public void channelActive(ChannelHandlerContext ctx) throws Exception {
+            reties = 0;
+            group(address).addChannel(ctx.channel());
+            logger.info("reconnect with: {}", ctx.channel());
+
+            super.channelActive(ctx);
         }
 
         @Override
@@ -289,7 +302,12 @@ public class NettyClient extends NettyServiceAbstract implements RpcClient {
 
         @Override
         public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-            timer.newTimeout(this, 2000, TimeUnit.MILLISECONDS);
+            if (needReconnect) {
+                if (reties < 10) {
+                    reties++;
+                }
+                timer.newTimeout(this, 2 << reties, TimeUnit.SECONDS);
+            }
         }
 
         @Override
@@ -358,7 +376,6 @@ public class NettyClient extends NettyServiceAbstract implements RpcClient {
         public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
             final String remoteAddress = ctx.channel().remoteAddress().toString();
             logger.debug("NETTY CLIENT PIPELINE: CLOSE {}", remoteAddress);
-            ctx.channel().close();
             super.close(ctx, promise);
 
             if (NettyClient.this.channelEventListener != null) {
@@ -372,8 +389,6 @@ public class NettyClient extends NettyServiceAbstract implements RpcClient {
                 IdleStateEvent event = (IdleStateEvent) evt;
                 if (event.state().equals(IdleState.ALL_IDLE)) {
                     final String remoteAddress = ctx.channel().remoteAddress().toString();
-                    logger.warn("NETTY CLIENT PIPELINE: IDLE exception [{}]", remoteAddress);
-                    // ctx.channel().close();
                     if (NettyClient.this.channelEventListener != null) {
                         NettyClient.this
                                 .putChannelEvent(new ChannelEvent(ChannelEventType.IDLE, remoteAddress, ctx.channel()));

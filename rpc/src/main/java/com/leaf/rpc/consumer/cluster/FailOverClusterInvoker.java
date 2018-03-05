@@ -3,6 +3,7 @@ package com.leaf.rpc.consumer.cluster;
 import com.leaf.rpc.Request;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.dispatcher.Dispatcher;
+import com.leaf.rpc.consumer.future.InvokeFuture;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,12 +29,12 @@ public class FailOverClusterInvoker implements ClusterInvoker {
     }
 
     @Override
-    public Object invoke(Request request, Class<?> returnType, InvokeType invokeType) throws Throwable {
-        Object result = invoke0(request, returnType, invokeType, 0);
+    public <T> InvokeFuture<T> invoke(Request request, Class<T> returnType, InvokeType invokeType) throws Throwable {
+       InvokeFuture<T> result = invoke0(request, returnType, invokeType, 0);
         return result;
     }
 
-    private Object invoke0(Request request, Class<?> returnType, InvokeType invokeType, int tryCount) throws Throwable {
+    private <T> InvokeFuture<T> invoke0(Request request, Class<T> returnType, InvokeType invokeType, int tryCount) throws Throwable {
         try {
             tryCount ++;
             return dispatcher.dispatch(request, returnType, invokeType);

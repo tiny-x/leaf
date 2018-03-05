@@ -32,4 +32,13 @@ public class StrategyConfig {
     public void setRetries(int retries) {
         this.retries = retries;
     }
+
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("StrategyConfig{");
+        sb.append("strategy=").append(strategy);
+        sb.append(", retries=").append(retries);
+        sb.append('}');
+        return sb.toString();
+    }
 }

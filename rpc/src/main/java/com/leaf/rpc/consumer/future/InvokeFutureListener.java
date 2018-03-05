@@ -1,6 +1,6 @@
 package com.leaf.rpc.consumer.future;
 
-public interface RpcFutureListener<T> {
+public interface InvokeFutureListener<T> {
 
     void complete(T result);
 

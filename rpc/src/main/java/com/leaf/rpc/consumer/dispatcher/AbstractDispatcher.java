@@ -2,7 +2,6 @@ package com.leaf.rpc.consumer.dispatcher;
 
 import com.leaf.common.model.ResponseWrapper;
 import com.leaf.common.model.ServiceMeta;
-import com.leaf.common.utils.Reflects;
 import com.leaf.remoting.api.InvokeCallback;
 import com.leaf.remoting.api.ResponseStatus;
 import com.leaf.remoting.api.channel.ChannelGroup;
@@ -13,15 +12,16 @@ import com.leaf.rpc.Request;
 import com.leaf.rpc.balancer.LoadBalancer;
 import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.InvokeType;
-import com.leaf.rpc.consumer.future.RpcContext;
-import com.leaf.rpc.consumer.future.RpcFuture;
-import com.leaf.rpc.consumer.future.RpcFutureGroup;
-import com.leaf.rpc.consumer.future.RpcFutureListener;
+import com.leaf.rpc.consumer.future.DefaultInvokeFuture;
+import com.leaf.rpc.consumer.future.DefaultInvokeFutureGroup;
+import com.leaf.rpc.consumer.future.InvokeFuture;
 import com.leaf.serialization.api.Serializer;
 import com.leaf.serialization.api.SerializerFactory;
 import com.leaf.serialization.api.SerializerType;
 
 import java.util.concurrent.CopyOnWriteArrayList;
+
+import static com.google.common.base.Preconditions.checkState;
 
 public abstract class AbstractDispatcher implements Dispatcher {
 
@@ -52,11 +52,13 @@ public abstract class AbstractDispatcher implements Dispatcher {
                 return g;
             }
         }
-        throw new IllegalStateException("no channel");
+        throw new IllegalStateException(metadata + " no channel");
     }
 
     protected ChannelGroup[] groups(ServiceMeta metadata) {
         CopyOnWriteArrayList<ChannelGroup> channelGroups = consumer.client().directory(metadata);
+        checkState(channelGroups.size() > 0, metadata + " no channel");
+
         ChannelGroup[] channelGroupsArray = new ChannelGroup[channelGroups.size()];
         channelGroups.toArray(channelGroupsArray);
         return channelGroupsArray;
@@ -76,26 +78,25 @@ public abstract class AbstractDispatcher implements Dispatcher {
         return serializerType.value();
     }
 
-    protected Object invoke(final Request request,
-                            final DispatchType dispatchType,
-                            Class<?> returnType,
-                            InvokeType invokeType,
-                            ChannelGroup... channelGroup) throws Throwable {
+    protected <T> InvokeFuture<T> invoke(final Request request,
+                                        final DispatchType dispatchType,
+                                        Class<T> returnType,
+                                        InvokeType invokeType,
+                                        ChannelGroup... channelGroup) throws Throwable {
 
         switch (invokeType) {
             case SYNC: {
                 if (dispatchType == DispatchType.BROADCAST) {
                     throw new UnsupportedOperationException("syncInvoke Unsupported broadcast dispatch!");
                 }
-                return invokeSync(request, channelGroup[0]);
+                return invokeSync(request, returnType, channelGroup[0]);
             }
             case ASYNC: {
-                invokeAsync(request, dispatchType, channelGroup);
-                return Reflects.getTypeDefaultValue(returnType);
+                return invokeAsync(request, dispatchType, returnType, channelGroup);
             }
             case ONE_WAY: {
                 invokeOneWay(request, dispatchType, channelGroup);
-                return Reflects.getTypeDefaultValue(returnType);
+                return null;
             }
             default: {
                 String errorMessage = String.format("Unsupported InvokeType: %s", invokeType.name());
@@ -105,7 +106,8 @@ public abstract class AbstractDispatcher implements Dispatcher {
 
     }
 
-    private Object invokeSync(Request request, ChannelGroup channelGroup) throws Throwable {
+    private <T> InvokeFuture<T> invokeSync(Request request,  Class<T> returnType, ChannelGroup channelGroup) throws Throwable {
+        InvokeFuture<T> invokeFuture = new DefaultInvokeFuture<>(returnType, timeoutMillis);
         ResponseCommand responseCommand = consumer
                 .client()
                 .invokeSync(channelGroup.remoteAddress(),
@@ -114,37 +116,39 @@ public abstract class AbstractDispatcher implements Dispatcher {
 
         ResponseWrapper responseWrapper = getSerializer().deserialize(responseCommand.getBody(), ResponseWrapper.class);
         if (responseCommand.getStatus() == ResponseStatus.SUCCESS.value()) {
-            return responseWrapper.getResult();
+            invokeFuture.complete((T) responseWrapper.getResult());
+            return invokeFuture;
         } else {
-            throw handlerException(responseCommand);
+            Throwable throwable = handlerException(responseCommand);
+            invokeFuture.complete((T) throwable);
+            return invokeFuture;
         }
     }
 
-    private void invokeAsync(Request request, DispatchType dispatchType, ChannelGroup... channelGroup) throws Throwable {
+    private <T> InvokeFuture<T> invokeAsync(Request request, DispatchType dispatchType,  Class<T> returnType, ChannelGroup... channelGroup) throws Throwable {
+        InvokeFuture<T> invokeFuture = null;
         switch (dispatchType) {
             case ROUND: {
-                RpcFuture future = new RpcFuture();
-                RpcContext.setFuture(future);
+                invokeFuture = new DefaultInvokeFuture<T>(returnType, timeoutMillis);
                 consumer.client().invokeAsync(
                         channelGroup[0].remoteAddress(),
                         request.getRequestCommand(),
                         timeoutMillis,
-                        new InvokeAsyncCallback(future));
-                break;
+                        new InvokeAsyncCallback(invokeFuture));
+                return invokeFuture;
             }
             case BROADCAST: {
-                RpcFuture[] futures = new RpcFuture[channelGroup.length];
-                RpcFutureGroup rpcFutureGroup = new RpcFutureGroup(futures);
+                DefaultInvokeFuture[] futures = new DefaultInvokeFuture[channelGroup.length];
+                invokeFuture = new DefaultInvokeFutureGroup(futures);
                 for (int i = 0; i < channelGroup.length; i++) {
-                    futures[i] = new RpcFuture();
+                    futures[i] = new DefaultInvokeFuture<T>(returnType, timeoutMillis);
                     consumer.client().invokeAsync(
                             channelGroup[i].remoteAddress(),
                             request.getRequestCommand().clone(),
                             timeoutMillis,
                             new InvokeAsyncCallback(futures[i]));
                 }
-                RpcContext.setRpcFutureGroup(rpcFutureGroup);
-                break;
+                return invokeFuture;
             }
             default: {
                 String errorMessage = String.format("Unsupported DispatchType: %s",
@@ -194,10 +198,10 @@ public abstract class AbstractDispatcher implements Dispatcher {
 
     class InvokeAsyncCallback implements InvokeCallback<ResponseCommand> {
 
-        private RpcFuture future;
+        private InvokeFuture<Object> future;
 
-        public InvokeAsyncCallback(RpcFuture future) {
-            this.future = future;
+        public <T> InvokeAsyncCallback(InvokeFuture<T> future) {
+            this.future = (InvokeFuture<Object>) future;
         }
 
         @Override

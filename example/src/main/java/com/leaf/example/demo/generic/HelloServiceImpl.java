@@ -1,12 +1,8 @@
-package com.leaf.example.generic;
+package com.leaf.example.demo.generic;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/**
- * @author yefei
- * @date 2017-06-20 14:14
- */
 public class HelloServiceImpl implements HelloService {
 
     /**

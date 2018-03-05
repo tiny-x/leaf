@@ -65,12 +65,16 @@ public class ProxyFactory {
         ProxyFactory proxyFactory = new ProxyFactory();
         proxyFactory.interfaceClass = interfaceClass;
         proxyFactory.addresses = new ArrayList<>();
-        proxyFactory.serviceProviderName = interfaceClass.getName();
         return proxyFactory;
     }
 
     public ProxyFactory group(String group) {
         this.group = group;
+        return this;
+    }
+
+    public ProxyFactory serviceProviderName(String serviceProviderName) {
+        this.serviceProviderName = serviceProviderName;
         return this;
     }
 
@@ -81,6 +85,7 @@ public class ProxyFactory {
 
     public ProxyFactory directory(Directory directory) {
         this.group(directory.getGroup())
+                .serviceProviderName(directory.getServiceProviderName())
                 .version(directory.getVersion());
         return this;
     }
@@ -112,7 +117,7 @@ public class ProxyFactory {
     }
 
     public ProxyFactory providers(UnresolvedAddress... addresses) {
-        Collections.addAll(this.addresses,  addresses);
+        Collections.addAll(this.addresses, addresses);
         return this;
     }
 
@@ -151,7 +156,7 @@ public class ProxyFactory {
         }
 
         ServiceMeta serviceMeta = new ServiceMeta(group,
-                serviceProviderName,
+                Strings.isNullOrEmpty(serviceProviderName) ? interfaceClass.getName() : serviceProviderName,
                 Strings.isNullOrEmpty(version) ? Constants.SERVICE_VERSION : version);
 
         for (UnresolvedAddress address : addresses) {
@@ -168,11 +173,15 @@ public class ProxyFactory {
                                 int connCount = registerMeta.getConnCount() < 1 ? 1 : registerMeta.getConnCount();
                                 for (int i = 0; i < connCount; i++) {
                                     consumer.connect(registerMeta.getAddress());
-                                    consumer.client().addChannelGroup(serviceMeta, registerMeta.getAddress());
                                 }
 
-                                consumer.client().group(registerMeta.getAddress())
+                                // 设置channelGroup(相同地址的channel) weight
+                                consumer.client()
+                                        .group(registerMeta.getAddress())
                                         .setWeight(serviceMeta, registerMeta.getWeight());
+
+                                // channelGroup 和 serviceMeta 关系
+                                consumer.client().addChannelGroup(serviceMeta, registerMeta.getAddress());
 
                                 consumer.offlineListening(registerMeta.getAddress(), new OfflineListener() {
                                     @Override

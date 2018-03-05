@@ -8,9 +8,10 @@ import com.leaf.rpc.ProxyFactory;
 import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.DefaultConsumer;
 import com.leaf.rpc.consumer.InvokeType;
-import com.leaf.rpc.consumer.future.RpcContext;
-import com.leaf.rpc.consumer.future.RpcFuture;
-import com.leaf.rpc.consumer.future.RpcFutureListener;
+import com.leaf.rpc.consumer.future.InvokeFuture;
+import com.leaf.rpc.consumer.future.InvokeFutureContext;
+import com.leaf.rpc.consumer.future.DefaultInvokeFuture;
+import com.leaf.rpc.consumer.future.InvokeFutureListener;
 
 public class ConsumerAsyncExample {
 
@@ -33,8 +34,8 @@ public class ConsumerAsyncExample {
         String s = helloService.sayHello(" biu biu biu!!!");
         System.out.println(s);
 
-        RpcFuture<String> future = RpcContext.getFuture ();
-        future.addListener(new RpcFutureListener<String>() {
+        InvokeFuture<String> future = InvokeFutureContext.getInvokeFuture();
+        future.addListener(new InvokeFutureListener<String>() {
             @Override
             public void complete(String result) {
                 System.out.println("result: " + result);

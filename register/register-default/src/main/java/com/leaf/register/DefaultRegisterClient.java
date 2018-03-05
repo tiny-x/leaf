@@ -67,12 +67,14 @@ public class DefaultRegisterClient {
     }
 
     public void register(RegisterMeta registerMeta) {
-        Serializer serializer = SerializerFactory.serializer(serializerType);
-        RequestCommand requestCommand = new RequestCommand(ProtocolHead.REGISTER_SERVICE,
-                serializerType.value(),
-                serializer.serialize(registerMeta));
         try {
             if (attachRegisterEvent(registerMeta, channel)) {
+
+                Serializer serializer = SerializerFactory.serializer(serializerType);
+                RequestCommand requestCommand = new RequestCommand(ProtocolHead.REGISTER_SERVICE,
+                        serializerType.value(),
+                        serializer.serialize(registerMeta));
+
                 rpcClient.invokeSync(channel, requestCommand, config.getInvokeTimeoutMillis());
             }
         } catch (Exception e) {
@@ -81,12 +83,12 @@ public class DefaultRegisterClient {
     }
 
     public void unRegister(RegisterMeta registerMeta) {
-        Serializer serializer = SerializerFactory.serializer(serializerType);
-        RequestCommand requestCommand = new RequestCommand(ProtocolHead.CANCEL_REGISTER_SERVICE,
-                serializerType.value(),
-                serializer.serialize(registerMeta));
         try {
             if (attachCancelRegisterEvent(registerMeta, channel)) {
+                Serializer serializer = SerializerFactory.serializer(serializerType);
+                RequestCommand requestCommand = new RequestCommand(ProtocolHead.CANCEL_REGISTER_SERVICE,
+                        serializerType.value(),
+                        serializer.serialize(registerMeta));
                 rpcClient.invokeSync(channel, requestCommand, config.getInvokeTimeoutMillis());
             }
         } catch (Exception e) {
@@ -96,16 +98,19 @@ public class DefaultRegisterClient {
 
 
     public void subscribe(ServiceMeta serviceMeta) {
-        Serializer serializer = SerializerFactory.serializer(serializerType);
-
-        RequestCommand requestCommand = new RequestCommand(ProtocolHead.SUBSCRIBE_SERVICE,
-                serializerType.value(),
-                serializer.serialize(serviceMeta));
-
         try {
             if (attachSubscribeEvent(serviceMeta, channel)) {
+                Serializer serializer = SerializerFactory.serializer(serializerType);
+
+                RequestCommand requestCommand = new RequestCommand(ProtocolHead.SUBSCRIBE_SERVICE,
+                        serializerType.value(),
+                        serializer.serialize(serviceMeta));
+
                 ResponseCommand responseCommand = rpcClient.invokeSync(channel, requestCommand, config.getInvokeTimeoutMillis());
                 Notify notifyData = serializer.deserialize(responseCommand.getBody(), Notify.class);
+                if (notifyData.getRegisterMetas() == null || notifyData.getRegisterMetas().size() == 0) {
+                    throw new IllegalStateException("[SUBSCRIBE] " + notifyData.getServiceMeta() + " no provider!");
+                }
                 registerService.notify(notifyData.getServiceMeta(),
                         notifyData.getEvent(),
                         notifyData.getRegisterMetas());
@@ -121,13 +126,13 @@ public class DefaultRegisterClient {
         public void onChannelActive(String remoteAddr, Channel channel) {
             DefaultRegisterClient.this.channel = channel;
             // 重新连接 重新发布 订阅服务
-            ConcurrentSet<RegisterMeta> providers = registerService.getProviders();
+            ConcurrentSet<RegisterMeta> providers = registerService.getProviderRegisterMetas();
             if (providers != null && providers.size() > 0) {
                 for (RegisterMeta registerMeta : providers) {
                     register(registerMeta);
                 }
             }
-            ConcurrentSet<ServiceMeta> consumers = registerService.getConsumers();
+            ConcurrentSet<ServiceMeta> consumers = registerService.getConsumersServiceMeta();
             if (consumers != null && consumers.size() > 0) {
                 for (ServiceMeta serviceMeta : consumers) {
                     subscribe(serviceMeta);
@@ -144,17 +149,24 @@ public class DefaultRegisterClient {
             Notify notifyData = serializer.deserialize(request.getBody(), Notify.class);
             switch (request.getMessageCode()) {
                 case ProtocolHead.SUBSCRIBE_SERVICE: {
+                    if (notifyData.getRegisterMetas() == null || notifyData.getRegisterMetas().size() == 0) {
+                        throw new IllegalStateException("[SUBSCRIBE]" + notifyData.getServiceMeta() + " no provider!");
+                    }
                     registerService.notify(notifyData.getServiceMeta(),
                             notifyData.getEvent(),
                             notifyData.getRegisterMetas());
+                    break;
                 }
                 case ProtocolHead.OFFLINE_SERVICE: {
                     UnresolvedAddress address = notifyData.getAddress();
                     registerService.offline(address);
+                    break;
                 }
                 default:
                     throw new UnsupportedOperationException("RegisterClientProcess Unsupported MessageCode: " + request.getMessageCode());
             }
+            // TODO 回复ack
+            return null;
         }
 
         @Override

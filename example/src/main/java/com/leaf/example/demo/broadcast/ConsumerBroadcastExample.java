@@ -9,10 +9,7 @@ import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.DefaultConsumer;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.dispatcher.DispatchType;
-import com.leaf.rpc.consumer.future.InvokeFuture;
-import com.leaf.rpc.consumer.future.RpcContext;
-import com.leaf.rpc.consumer.future.RpcFutureGroup;
-import com.leaf.rpc.consumer.future.RpcFutureListener;
+import com.leaf.rpc.consumer.future.*;
 
 public class ConsumerBroadcastExample {
 
@@ -49,8 +46,8 @@ public class ConsumerBroadcastExample {
         String s = helloService.sayHello(" biu biu biu!!!");
         System.out.println(s);
 
-        RpcFutureGroup rpcFutureGroup = RpcContext.getRpcFutureGroup();
-        rpcFutureGroup.addListener(new RpcFutureListener<String>() {
+        InvokeFutureGroup invokeFutureGroup = InvokeFutureContext.getInvokeFutureGroup();
+        invokeFutureGroup.addListener(new InvokeFutureListener<String>() {
             @Override
             public void complete(String result) {
                 System.out.println("result: " + result);
@@ -61,7 +58,7 @@ public class ConsumerBroadcastExample {
                 System.out.println("error: " + cause);
             }
         });
-        InvokeFuture[] futures = rpcFutureGroup.futures();
+        InvokeFuture[] futures = invokeFutureGroup.futures();
 
         for (InvokeFuture future : futures) {
             try {

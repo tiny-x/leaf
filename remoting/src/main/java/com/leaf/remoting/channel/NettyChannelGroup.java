@@ -1,6 +1,7 @@
 package com.leaf.remoting.channel;
 
 import com.leaf.common.UnresolvedAddress;
+import com.leaf.common.constants.Constants;
 import com.leaf.common.model.Directory;
 import com.leaf.remoting.api.channel.ChannelGroup;
 import io.netty.channel.Channel;
@@ -25,7 +26,7 @@ public class NettyChannelGroup implements ChannelGroup {
 
     private final UnresolvedAddress address;
 
-    private static final int DEFAULT_WEIGHT = 50;
+    private static final int DEFAULT_WEIGHT = Constants.SERVICE_WEIGHT;
 
     private final ConcurrentMap<String, Integer> weights = new ConcurrentHashMap<>();
 
@@ -106,5 +107,16 @@ public class NettyChannelGroup implements ChannelGroup {
     @Override
     public int size() {
         return channels.size();
+    }
+
+    @Override
+    public String toString() {
+        final StringBuffer sb = new StringBuffer("NettyChannelGroup{");
+        sb.append("channels=").append(channels);
+        sb.append(", address=").append(address);
+        // weights =  {} DEFAULT_WEIGHT
+        sb.append(", weights=").append(weights);
+        sb.append('}');
+        return sb.toString();
     }
 }

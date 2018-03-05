@@ -4,7 +4,7 @@ public enum DirectoryEnums {
 
     PROVIDERS("providers"),
 
-    CONSUMERS("consumers");
+    CONSUMERS("consumersServiceMeta");
 
     public String path;
 

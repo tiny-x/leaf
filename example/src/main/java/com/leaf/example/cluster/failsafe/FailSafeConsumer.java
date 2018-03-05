@@ -1,4 +1,4 @@
-package com.leaf.example.cluster.failfast;
+package com.leaf.example.cluster.failsafe;
 
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.example.cluster.api.ClusterService;
@@ -13,7 +13,7 @@ import com.leaf.rpc.consumer.future.InvokeFutureListener;
 
 import java.util.HashMap;
 
-public class FailFastConsumer {
+public class FailSafeConsumer {
 
     public static void main(String[] args) {
         Consumer consumer = new DefaultConsumer("consumer");
@@ -29,17 +29,19 @@ public class FailFastConsumer {
             consumer.connect(address);
             consumer.connect(address);
         }
+
         System.out.println("------------------同步调用");
         sync(consumer, addresses);
         System.out.println("------------------异步调用");
         async(consumer, addresses);
+
     }
 
     private static void sync(Consumer consumer, UnresolvedAddress[] addresses) {
         ClusterService clusterService = ProxyFactory.factory(ClusterService.class)
                 .consumer(consumer)
                 .providers(addresses)
-                .strategy(ClusterInvoker.Strategy.FAIL_FAST)
+                .strategy(ClusterInvoker.Strategy.FAIL_SAFE)
                 .newProxy();
 
         HashMap<String, Object> user = new HashMap<>();
@@ -73,7 +75,7 @@ public class FailFastConsumer {
                 .consumer(consumer)
                 .providers(addresses)
                 .invokeType(InvokeType.ASYNC)
-                .strategy(ClusterInvoker.Strategy.FAIL_FAST)
+                .strategy(ClusterInvoker.Strategy.FAIL_SAFE)
                 .newProxy();
 
         HashMap<String, Object> user = new HashMap<>();

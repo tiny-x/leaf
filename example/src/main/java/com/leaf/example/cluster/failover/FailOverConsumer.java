@@ -7,9 +7,9 @@ import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.DefaultConsumer;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.cluster.ClusterInvoker;
-import com.leaf.rpc.consumer.future.RpcContext;
-import com.leaf.rpc.consumer.future.RpcFuture;
-import com.leaf.rpc.consumer.future.RpcFutureListener;
+import com.leaf.rpc.consumer.future.InvokeFuture;
+import com.leaf.rpc.consumer.future.InvokeFutureContext;
+import com.leaf.rpc.consumer.future.InvokeFutureListener;
 
 import java.util.HashMap;
 
@@ -81,8 +81,8 @@ public class FailOverConsumer {
 
         try {
             clusterService.addUser(user);
-            RpcFuture future = RpcContext.getFuture();
-            future.addListener(new RpcFutureListener() {
+            InvokeFuture future = InvokeFutureContext.getInvokeFuture();
+            future.addListener(new InvokeFutureListener() {
                 @Override
                 public void complete(Object result) {
                     System.out.println(result);
@@ -100,8 +100,8 @@ public class FailOverConsumer {
 
         try {
             clusterService.getAge();
-            RpcFuture future = RpcContext.getFuture();
-            future.addListener(new RpcFutureListener() {
+            InvokeFuture future = InvokeFutureContext.getInvokeFuture();
+            future.addListener(new InvokeFutureListener() {
                 @Override
                 public void complete(Object result) {
                     System.out.println(result);
@@ -119,8 +119,8 @@ public class FailOverConsumer {
 
         try {
             clusterService.getName();
-            RpcFuture future = RpcContext.getFuture();
-            future.addListener(new RpcFutureListener() {
+            InvokeFuture future = InvokeFutureContext.getInvokeFuture();
+            future.addListener(new InvokeFutureListener() {
                 @Override
                 public void complete(Object result) {
                     System.out.println(result);

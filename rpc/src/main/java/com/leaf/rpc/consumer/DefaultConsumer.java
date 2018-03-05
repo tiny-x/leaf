@@ -28,10 +28,7 @@ public class DefaultConsumer implements Consumer {
 
     public DefaultConsumer(String application, NettyClientConfig nettyClientConfig) {
         checkNotNull(application, "application");
-
-        if (nettyClientConfig == null) {
-            nettyClientConfig = new NettyClientConfig();
-        }
+        nettyClientConfig = nettyClientConfig == null ? new NettyClientConfig() : nettyClientConfig;
         this.application = application;
         this.rpcClient = new NettyClient(nettyClientConfig);
         this.rpcClient.start();

@@ -1,32 +1,40 @@
 package com.leaf.example.register;
 
 import com.leaf.common.model.ServiceWrapper;
-import com.leaf.remoting.netty.NettyServerConfig;
 import com.leaf.rpc.provider.DefaultProvider;
 import com.leaf.rpc.provider.Provider;
 
+import java.util.concurrent.CountDownLatch;
+
 public class ProviderExample {
 
-    public static void main(String[] args) {
-        NettyServerConfig config = new NettyServerConfig();
-        Provider provider = new DefaultProvider(config);
-        provider.start();
-        provider.connectToRegistryServer("127.0.0.1:9876");
+    public static void main(String[] args) throws InterruptedException {
 
         HelloService helloService = new HelloServiceImpl();
 
-        // 注册到本地容器 未发布到注册中心
-        ServiceWrapper serviceWrapper = provider.serviceRegistry()
-                .provider(helloService)
-                .interfaceClass(HelloService.class)
-                .providerName("org.rpc.example.demo.HelloService")
-                .group("test")
-                .version("1.0.0")
-                .weight(50)
-                .register();
+        Provider[] providers = new DefaultProvider[]{
+                new DefaultProvider(9180),
+                new DefaultProvider(9181),
+                new DefaultProvider(9182)
+        };
 
-        // 发布到注册中心
-        provider.publishService(serviceWrapper);
+        CountDownLatch countDownLatch = new CountDownLatch(providers.length);
+
+        for (Provider provider : providers) {
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    provider.start();
+                    // 注册到本地容器 未发布到注册中心
+                    ServiceWrapper serviceWrapper = provider.serviceRegistry()
+                            .provider(helloService)
+                            .register();
+                    provider.connectToRegistryServer("127.0.0.1:9876");
+                    provider.publishService(serviceWrapper);
+                }
+            }).start();
+        }
+        countDownLatch.await();
 
     }
 }

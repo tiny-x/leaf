@@ -1,4 +1,4 @@
-package com.leaf.example.generic;
+package com.leaf.example.demo.generic;
 
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.model.ServiceMeta;

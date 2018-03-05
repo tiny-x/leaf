@@ -1,6 +1,5 @@
 package com.leaf.register.api;
 
-
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.concurrent.ConcurrentSet;
 import com.leaf.common.model.RegisterMeta;
@@ -30,27 +29,27 @@ public abstract class AbstractRegisterService implements RegisterService {
             new ConcurrentHashMap<>();
 
     /**
-     * 服务提供者(断线重连是重现注册服务)
+     * 已经注册的服务(断线重连是重连注册服务)
      */
-    protected final ConcurrentSet<RegisterMeta> providers = new ConcurrentSet<>();
+    protected final ConcurrentSet<RegisterMeta> providerRegisterMetas = new ConcurrentSet<>();
 
     /**
      * 已经订阅的服务
      */
-    protected final ConcurrentSet<ServiceMeta> consumers = new ConcurrentSet<>();
+    protected final ConcurrentSet<ServiceMeta> consumersServiceMeta = new ConcurrentSet<>();
 
 
     @Override
     public void register(RegisterMeta registerMeta) {
         logger.info("[REGISTER] register service: {}", registerMeta);
-        providers.add(registerMeta);
+        providerRegisterMetas.add(registerMeta);
         doRegister(registerMeta);
     }
 
     @Override
     public void unRegister(RegisterMeta registerMeta) {
         logger.info("[UN_REGISTER] unRegister service: {}", registerMeta);
-        consumers.remove(registerMeta);
+        consumersServiceMeta.remove(registerMeta);
         doUnRegister(registerMeta);
     }
 
@@ -58,7 +57,7 @@ public abstract class AbstractRegisterService implements RegisterService {
     public void subscribe(ServiceMeta serviceMeta, NotifyListener notifyListener) {
         logger.info("[SUBSCRIBE] subscribe service: {}", serviceMeta);
         subscribeListeners.put(serviceMeta, notifyListener);
-        consumers.add(serviceMeta);
+        consumersServiceMeta.add(serviceMeta);
         doSubscribe(serviceMeta);
     }
 
@@ -103,12 +102,12 @@ public abstract class AbstractRegisterService implements RegisterService {
         return null;
     }
 
-    public ConcurrentSet<RegisterMeta> getProviders() {
-        return providers;
+    public ConcurrentSet<RegisterMeta> getProviderRegisterMetas() {
+        return providerRegisterMetas;
     }
 
-    public ConcurrentSet<ServiceMeta> getConsumers() {
-        return consumers;
+    public ConcurrentSet<ServiceMeta> getConsumersServiceMeta() {
+        return consumersServiceMeta;
     }
 
     protected abstract void doRegister(RegisterMeta registerMeta);

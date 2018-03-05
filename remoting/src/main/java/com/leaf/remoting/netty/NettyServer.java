@@ -208,7 +208,6 @@ public class NettyServer extends NettyServiceAbstract implements RpcServer {
                 IdleStateEvent event = (IdleStateEvent) evt;
                 if (event.state().equals(IdleState.ALL_IDLE)) {
                     final String remoteAddress = ctx.channel().remoteAddress().toString();
-                    logger.warn("NETTY SERVER PIPELINE: IDLE exception [{}]", remoteAddress);
                     if (NettyServer.this.channelEventListener != null) {
                         NettyServer.this
                                 .putChannelEvent(new ChannelEvent(ChannelEventType.IDLE, remoteAddress, ctx.channel()));

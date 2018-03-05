@@ -2,6 +2,7 @@ package com.leaf.register.process;
 
 import com.leaf.common.ProtocolHead;
 import com.leaf.common.UnresolvedAddress;
+import com.leaf.common.concurrent.ConcurrentSet;
 import com.leaf.common.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.register.api.NotifyEvent;
@@ -23,7 +24,6 @@ import io.netty.channel.group.DefaultChannelGroup;
 import io.netty.util.Attribute;
 import io.netty.util.AttributeKey;
 import io.netty.util.concurrent.GlobalEventExecutor;
-import io.netty.util.internal.ConcurrentSet;
 import io.netty.util.internal.SystemPropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -282,9 +282,10 @@ public class RegisterProcess implements RequestProcessor {
 
         @Override
         public void onChannelInActive(String remoteAddr, Channel channel) {
-            logger.info("[OFFLINE_SERVICE] server: {} offline", remoteAddr);
             ConcurrentSet<RegisterMeta> registerMetas = channel.attr(PUBLISH_KEY).get();
             if (registerMetas != null && registerMetas.size() > 0) {
+                logger.info("[OFFLINE_SERVICE] server: {} offline", remoteAddr);
+
                 UnresolvedAddress address = null;
                 for (RegisterMeta registerMeta : registerMetas) {
                     address = registerMeta.getAddress();
@@ -297,7 +298,7 @@ public class RegisterProcess implements RequestProcessor {
                 Notify notify = new Notify(address);
                 Serializer serializer = SerializerFactory.serializer(serializerType);
                 RequestCommand requestCommand = RemotingCommandFactory.createRequestCommand(
-                        SUBSCRIBE_SERVICE,
+                        OFFLINE_SERVICE,
                         serializerType.value(),
                         serializer.serialize(notify)
                 );
