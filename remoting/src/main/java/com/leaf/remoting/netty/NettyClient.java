@@ -252,7 +252,7 @@ public class NettyClient extends NettyServiceAbstract implements RpcClient {
                     logger.error("scanResponseTable exception", e);
                 }
             }
-        }, 1000 * 3, 100000, TimeUnit.MILLISECONDS);
+        }, 1000 * 3, 1000, TimeUnit.MILLISECONDS);
 
         if (channelEventListener != null) {
             new Thread(channelEventExecutor).start();

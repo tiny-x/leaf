@@ -7,10 +7,9 @@ import com.leaf.common.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.register.api.AbstractRegisterService;
 import com.leaf.register.api.model.Notify;
-import com.leaf.remoting.api.ChannelEventAdapter;
-import com.leaf.remoting.api.RequestProcessor;
-import com.leaf.remoting.api.RpcClient;
+import com.leaf.remoting.api.*;
 import com.leaf.remoting.api.channel.ChannelGroup;
+import com.leaf.remoting.api.future.ResponseFuture;
 import com.leaf.remoting.api.payload.RequestCommand;
 import com.leaf.remoting.api.payload.ResponseCommand;
 import com.leaf.remoting.netty.NettyClient;
@@ -22,7 +21,6 @@ import io.netty.channel.Channel;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.util.AttributeKey;
 import io.netty.util.internal.SystemPropertyUtil;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -67,18 +65,25 @@ public class DefaultRegisterClient {
     }
 
     public void register(RegisterMeta registerMeta) {
-        try {
-            if (attachRegisterEvent(registerMeta, channel)) {
+        if (attachRegisterEvent(registerMeta, channel)) {
+            Serializer serializer = SerializerFactory.serializer(serializerType);
+            RequestCommand requestCommand = new RequestCommand(ProtocolHead.REGISTER_SERVICE,
+                    serializerType.value(),
+                    serializer.serialize(registerMeta));
 
-                Serializer serializer = SerializerFactory.serializer(serializerType);
-                RequestCommand requestCommand = new RequestCommand(ProtocolHead.REGISTER_SERVICE,
-                        serializerType.value(),
-                        serializer.serialize(registerMeta));
-
-                rpcClient.invokeSync(channel, requestCommand, config.getInvokeTimeoutMillis());
+            try {
+                rpcClient.invokeAsync(
+                        channel,
+                        requestCommand,
+                        config.getInvokeTimeoutMillis(),
+                        new RegisterInvokeCallback(channel, requestCommand, config.getInvokeTimeoutMillis())
+                );
+            } catch (Exception e) {
+                logger.error("register service fail", e);
+            } finally {
+                // 悲观策略 默认失败注册失败，重新注册 直到收到成功ACK
+                // TODO 添加到重发队列
             }
-        } catch (Exception e) {
-            logger.error("register service fail", e);
         }
     }
 
@@ -172,6 +177,43 @@ public class DefaultRegisterClient {
         @Override
         public boolean rejectRequest() {
             return false;
+        }
+    }
+
+    class RegisterInvokeCallback implements InvokeCallback<ResponseCommand> {
+
+        private Channel channel;
+
+        private RequestCommand requestCommand;
+
+        private long invokeTimeoutMillis;
+
+        public RegisterInvokeCallback(Channel channel, RequestCommand requestCommand, long invokeTimeoutMillis) {
+            this.channel = channel;
+            this.requestCommand = requestCommand;
+            this.invokeTimeoutMillis = invokeTimeoutMillis;
+        }
+
+        @Override
+        public void operationComplete(ResponseFuture<ResponseCommand> responseFuture) {
+
+            ResponseCommand responseCommand = responseFuture.result();
+            if (responseCommand.getStatus() != ResponseStatus.SUCCESS.value()) {
+                // 重新发送消息
+                try {
+                    rpcClient.invokeAsync(
+                            channel,
+                            requestCommand,
+                            invokeTimeoutMillis,
+                            this
+                    );
+                } catch (Exception e) {
+                    // TODO
+
+                }
+            } else {
+
+            }
         }
     }
 
