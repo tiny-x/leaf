@@ -22,6 +22,7 @@ public class ProtocolHead {
     public static final byte ACK = 0x04;
 
     public static final byte SUBSCRIBE_SERVICE = 0x05;    // 监听服务
+    public static final byte SUBSCRIBE_RECEIVE = 0x06;    // 监听服务
 
     public static final byte OFFLINE_SERVICE = 0x07;  // 服务端下线
 

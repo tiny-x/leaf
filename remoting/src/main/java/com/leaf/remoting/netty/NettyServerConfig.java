@@ -14,6 +14,8 @@ public class NettyServerConfig {
 
     private int port = 9180;
 
+    private long invokeTimeoutMillis = 3000L;
+
     public int getPort() {
         return port;
     }
@@ -68,5 +70,13 @@ public class NettyServerConfig {
 
     public void setConnCount(int connCount) {
         this.connCount = connCount;
+    }
+
+    public long getInvokeTimeoutMillis() {
+        return invokeTimeoutMillis;
+    }
+
+    public void setInvokeTimeoutMillis(long invokeTimeoutMillis) {
+        this.invokeTimeoutMillis = invokeTimeoutMillis;
     }
 }

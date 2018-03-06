@@ -2,6 +2,7 @@ package com.leaf.rpc.balancer;
 
 
 import com.leaf.common.model.Directory;
+import com.leaf.common.utils.Collections;
 import com.leaf.remoting.api.channel.ChannelGroup;
 
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -19,7 +20,7 @@ public class RandomRobinLoadBalancer implements LoadBalancer {
     
     @Override
     public ChannelGroup select(CopyOnWriteArrayList<ChannelGroup> list, Directory directory) {
-        if (list == null || list.size() == 0) {
+        if (Collections.isEmpty(list)) {
             return null;
         }
         ChannelGroup[] channelGroups = new ChannelGroup[list.size()];

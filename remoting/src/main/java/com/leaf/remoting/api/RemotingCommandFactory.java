@@ -45,6 +45,7 @@ public class RemotingCommandFactory {
     public static ResponseCommand createResponseCommand(byte messageCode, byte serializerCode,
                                                         byte[] body, long invokeId) {
         ResponseCommand responseCommand = new ResponseCommand(
+                messageCode,
                 serializerCode,
                 body,
                 invokeId

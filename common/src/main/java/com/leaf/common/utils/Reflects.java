@@ -7,10 +7,6 @@ import java.util.concurrent.ConcurrentHashMap;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-/**
- * @author yefei
- * @date 2018-02-26 11:12
- */
 public class Reflects {
 
     private static final ConcurrentHashMap<Class<?>, SoftReference<MethodAccess>> METHODACCESS_CACHE = new ConcurrentHashMap<>();

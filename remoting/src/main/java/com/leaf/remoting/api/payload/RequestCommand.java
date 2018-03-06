@@ -60,7 +60,8 @@ public class RequestCommand extends ByteHolder implements Cloneable {
         } catch (CloneNotSupportedException e) {
             AnyThrow.throwUnchecked(e);
         }
-        clone.invokeId = REQUEST_ID.getAndIncrement();
+        clone.invokeId = REQUEST_ID.incrementAndGet();
+        clone.timestamp = System.currentTimeMillis();
         return clone;
     }
 }

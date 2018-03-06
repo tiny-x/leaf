@@ -1,5 +1,7 @@
 package com.leaf.remoting.netty;
 
+import com.leaf.common.constants.Constants;
+
 public class NettyClientConfig {
 
     private int clientOnewaySemaphoreValue = NettySystemConfig.CLIENT_ONEWAY_SEMAPHORE_VALUE;
@@ -9,9 +11,9 @@ public class NettyClientConfig {
 
     private int idleAllSeconds = NettySystemConfig.IO_IDLE_ALL_TIME_SECONDS;
 
-    private long connectTimeoutMillis = 3000L;
+    private long connectTimeoutMillis = Constants.DEFAULT_CONNECT_TIMEOUT;
 
-    private long invokeTimeoutMillis = 3000L;
+    private long invokeTimeoutMillis = Constants.DEFAULT_INVOKE_TIMEOUT;
 
     public long getConnectTimeoutMillis() {
         return connectTimeoutMillis;

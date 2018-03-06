@@ -1,6 +1,7 @@
 package com.leaf.rpc.balancer;
 
 import com.leaf.common.model.Directory;
+import com.leaf.common.utils.Collections;
 import com.leaf.remoting.api.channel.ChannelGroup;
 
 import java.util.Random;
@@ -24,7 +25,7 @@ public class RandomLoadBalancer implements LoadBalancer {
 
     @Override
     public ChannelGroup select(CopyOnWriteArrayList<ChannelGroup> list, Directory directory) {
-        if (list == null && list.size() == 0) {
+        if (Collections.isEmpty(list)) {
             return null;
         }
         ChannelGroup[] channelGroups = (ChannelGroup[]) list.toArray();

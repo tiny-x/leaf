@@ -16,7 +16,7 @@ import static com.google.common.base.Preconditions.checkArgument;
 
 public class DefaultRegisterService extends AbstractRegisterService implements RegisterService {
 
-    private ConcurrentMap<UnresolvedAddress, DefaultRegisterClient> regiters = new ConcurrentHashMap<>();
+    private ConcurrentMap<UnresolvedAddress, DefaultRegisterClient> registerClients = new ConcurrentHashMap<>();
 
     public DefaultRegisterService() {
     }
@@ -25,34 +25,44 @@ public class DefaultRegisterService extends AbstractRegisterService implements R
     public void connectToRegistryServer(String addresses) {
         UnresolvedAddress[] unresolvedAddresses = InetUtils.spiltAddress(addresses);
         for (UnresolvedAddress unresolvedAddress : unresolvedAddresses) {
-            DefaultRegisterClient registerClient = new DefaultRegisterClient(unresolvedAddress, this);
-            regiters.put(unresolvedAddress, registerClient);
+
+            DefaultRegisterClient registerClient = registerClients.get(unresolvedAddress);
+            if (registerClient == null) {
+                DefaultRegisterClient newRegisterClient = new DefaultRegisterClient(this);
+                registerClient = registerClients.put(unresolvedAddress, newRegisterClient);
+                if (registerClient == null) {
+                    registerClient = newRegisterClient;
+                    registerClient.connect(unresolvedAddress);
+                } else {
+                    // newRegisterClient shutdown
+                }
+            }
         }
     }
 
     @Override
     public void doRegister(RegisterMeta registerMeta) {
-        checkArgument(!regiters.isEmpty(), "not connect any registry server");
+        checkArgument(!registerClients.isEmpty(), "not connect any registry server");
 
-        for (Map.Entry<UnresolvedAddress, DefaultRegisterClient> register : regiters.entrySet()) {
+        for (Map.Entry<UnresolvedAddress, DefaultRegisterClient> register : registerClients.entrySet()) {
             register.getValue().register(registerMeta);
         }
     }
 
     @Override
     public void doUnRegister(RegisterMeta registerMeta) {
-        checkArgument(!regiters.isEmpty(), "not connect any registry server");
+        checkArgument(!registerClients.isEmpty(), "not connect any registry server");
 
-        for (Map.Entry<UnresolvedAddress, DefaultRegisterClient> register : regiters.entrySet()) {
+        for (Map.Entry<UnresolvedAddress, DefaultRegisterClient> register : registerClients.entrySet()) {
             register.getValue().unRegister(registerMeta);
         }
     }
 
     @Override
     public void doSubscribe(ServiceMeta serviceMeta) {
-        checkArgument(!regiters.isEmpty(), "not connect any registry server");
+        checkArgument(!registerClients.isEmpty(), "not connect any registry server");
 
-        for (Map.Entry<UnresolvedAddress, DefaultRegisterClient> register : regiters.entrySet()) {
+        for (Map.Entry<UnresolvedAddress, DefaultRegisterClient> register : registerClients.entrySet()) {
             register.getValue().subscribe(serviceMeta);
         }
     }

@@ -4,6 +4,7 @@ import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.concurrent.ConcurrentSet;
 import com.leaf.common.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
+import com.leaf.common.utils.Collections;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,7 +90,7 @@ public abstract class AbstractRegisterService implements RegisterService {
                 event.name(),
                 registerMetas);
 
-        if (registerMetas != null && registerMetas.size() > 0) {
+        if (Collections.isNotEmpty(registerMetas)) {
             NotifyListener notifyListener = subscribeListeners.get(serviceMeta);
             for (RegisterMeta registerMeta : registerMetas) {
                 notifyListener.notify(registerMeta, event);

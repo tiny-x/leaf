@@ -18,12 +18,16 @@ import com.leaf.rpc.consumer.future.InvokeFuture;
 import com.leaf.serialization.api.Serializer;
 import com.leaf.serialization.api.SerializerFactory;
 import com.leaf.serialization.api.SerializerType;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import static com.google.common.base.Preconditions.checkState;
 
 public abstract class AbstractDispatcher implements Dispatcher {
+
+    private final static Logger logger = LoggerFactory.getLogger(AbstractDispatcher.class);
 
     protected long timeoutMillis;
     private Consumer consumer;
@@ -208,20 +212,25 @@ public abstract class AbstractDispatcher implements Dispatcher {
         public void operationComplete(ResponseFuture<ResponseCommand> responseFuture) {
             ResponseCommand responseCommand = responseFuture.result();
 
-            if (responseCommand.getStatus() == ResponseStatus.SUCCESS.value()) {
-                ResponseWrapper responseWrapper = getSerializer().deserialize(responseCommand.getBody(), ResponseWrapper.class);
-                future.complete(responseWrapper.getResult());
-                future.notifyListener(responseWrapper.getResult());
-            } else {
-                Throwable cause = null;
-                if (responseFuture.cause() == null) {
-                    cause = handlerException(responseCommand);
+            if (responseCommand != null) {
+                if (responseCommand.getStatus() == ResponseStatus.SUCCESS.value()) {
+                    ResponseWrapper responseWrapper = getSerializer().deserialize(responseCommand.getBody(), ResponseWrapper.class);
+                    future.complete(responseWrapper.getResult());
+                    future.notifyListener(responseWrapper.getResult());
                 } else {
-                    // 通常是客户端异常，客户端超时，发送失败等等
-                    cause = responseFuture.cause();
+                    Throwable cause = handlerException(responseCommand);
+                    future.complete(cause);
+                    future.notifyListener(cause);
                 }
-                future.complete(cause);
-                future.notifyListener(cause);
+            } else {
+                // 通常是客户端异常 或 等待服务端超时
+                Throwable cause = responseFuture.cause();
+                if (cause != null) {
+                    future.complete(cause);
+                    future.notifyListener(cause);
+                } else {
+                    logger.warn("Not only not received any message from provider, but cause is null!");
+                }
             }
         }
     }

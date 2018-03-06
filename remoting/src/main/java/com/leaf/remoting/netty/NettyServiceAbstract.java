@@ -33,9 +33,6 @@ public abstract class NettyServiceAbstract {
     protected final ConcurrentMap<Long, ResponseFuture<ResponseCommand>> responseTable =
             new ConcurrentHashMap(256);
 
-    protected final ConcurrentMap<String, ResponseFuture<ResponseCommand>> responseTableBroadcast =
-            new ConcurrentHashMap(256);
-
     protected final HashMap<Integer/* request code */, Pair<RequestProcessor, ExecutorService>> processorTable =
             new HashMap(64);
 
@@ -80,9 +77,9 @@ public abstract class NettyServiceAbstract {
             }
         }
 
-        for (ResponseFuture responseFuture : responseFutureList) {
+        for (ResponseFuture<ResponseCommand> responseFuture : responseFutureList) {
             try {
-                executeInvokeCallback(null, responseFuture);
+                executeInvokeCallback(responseFuture.result(), responseFuture);
             } catch (Throwable e) {
                 logger.warn("scanResponseTable, operationComplete Exception", e);
             }

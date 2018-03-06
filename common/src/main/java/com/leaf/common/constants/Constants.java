@@ -12,6 +12,10 @@ public class Constants {
 
     public static final long DEFAULT_INVOKE_TIMEOUT = 3000L;
 
+    public static final long DEFAULT_CONNECT_TIMEOUT = 3000L;
+
+    public static final long DEFAULT_RESNED_INTERVAL = 2000L;
+
 
 
 }
