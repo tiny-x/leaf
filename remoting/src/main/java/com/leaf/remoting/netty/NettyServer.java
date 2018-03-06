@@ -222,7 +222,6 @@ public class NettyServer extends NettyServiceAbstract implements RpcServer {
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
             final String remoteAddress = ctx.channel().remoteAddress().toString();
             logger.warn("NETTY SERVER PIPELINE: exceptionCaught {}", remoteAddress);
-            logger.warn("NETTY SERVER PIPELINE: exceptionCaught exception.", cause);
 
             if (NettyServer.this.channelEventListener != null) {
                 NettyServer.this.putChannelEvent(new ChannelEvent(ChannelEventType.EXCEPTION, remoteAddress, ctx.channel()));

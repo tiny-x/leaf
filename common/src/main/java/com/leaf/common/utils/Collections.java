@@ -5,7 +5,7 @@ import java.util.Collection;
 public class Collections {
 
     public static <E> boolean isEmpty(Collection<E> collection) {
-        if (collection != null || collection.size() == 0) {
+        if (collection == null || collection.size() == 0) {
             return true;
         }
         return false;

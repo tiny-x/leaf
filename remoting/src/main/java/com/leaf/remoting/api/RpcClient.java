@@ -14,7 +14,7 @@ import java.util.concurrent.ExecutorService;
 
 public interface RpcClient extends RpcService {
 
-    void connect(UnresolvedAddress address)
+    Connector connect(UnresolvedAddress address)
             throws InterruptedException, RemotingConnectException;
 
     boolean addChannelGroup(Directory directory, UnresolvedAddress address);
@@ -50,4 +50,6 @@ public interface RpcClient extends RpcService {
             throws RemotingException, InterruptedException;
 
     void registerRequestProcess(RequestProcessor requestProcessor, ExecutorService executor);
+
+    void cancelReconnect(UnresolvedAddress address);
 }

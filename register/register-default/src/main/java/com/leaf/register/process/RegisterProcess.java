@@ -338,7 +338,7 @@ public class RegisterProcess implements RequestProcessor {
         @Override
         public void onChannelInActive(String remoteAddr, Channel channel) {
             ConcurrentSet<RegisterMeta> registerMetas = channel.attr(PUBLISH_KEY).get();
-            if (Collections.isEmpty(registerMetas)) {
+            if (Collections.isNotEmpty(registerMetas)) {
                 logger.info("[OFFLINE_SERVICE] server: {} offline", remoteAddr);
 
                 UnresolvedAddress address = null;

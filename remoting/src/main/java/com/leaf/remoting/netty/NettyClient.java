@@ -2,10 +2,9 @@ package com.leaf.remoting.netty;
 
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.model.Directory;
-import com.leaf.remoting.api.ChannelEventListener;
-import com.leaf.remoting.api.InvokeCallback;
-import com.leaf.remoting.api.RequestProcessor;
-import com.leaf.remoting.api.RpcClient;
+import com.leaf.common.utils.Collections;
+import com.leaf.common.utils.Maps;
+import com.leaf.remoting.api.*;
 import com.leaf.remoting.api.channel.ChannelGroup;
 import com.leaf.remoting.api.channel.DirectoryChannelGroup;
 import com.leaf.remoting.api.payload.ByteHolder;
@@ -13,6 +12,7 @@ import com.leaf.remoting.api.payload.RequestCommand;
 import com.leaf.remoting.api.payload.ResponseCommand;
 import com.leaf.remoting.channel.NettyChannelGroup;
 import com.leaf.remoting.exception.RemotingConnectException;
+import com.leaf.remoting.exception.RemotingConnectTimeoutException;
 import com.leaf.remoting.exception.RemotingException;
 import com.leaf.remoting.netty.event.ChannelEvent;
 import com.leaf.remoting.netty.event.ChannelEventType;
@@ -63,6 +63,8 @@ public class NettyClient extends NettyServiceAbstract implements RpcClient {
 
     private final ScheduledExecutorService scanResponseTableExecutorService;
 
+    private final ConcurrentMap<UnresolvedAddress, CopyOnWriteArrayList<Connector>> connectorsMap = Maps.newConcurrentMap();
+
     private volatile boolean needReconnect = true;
 
     public NettyClient(NettyClientConfig config) {
@@ -97,23 +99,36 @@ public class NettyClient extends NettyServiceAbstract implements RpcClient {
     }
 
     @Override
-    public void connect(UnresolvedAddress address) throws InterruptedException, RemotingConnectException {
+    public Connector connect(UnresolvedAddress address) throws InterruptedException, RemotingConnectException {
         checkNotNull(address);
 
         ChannelFuture future = bootstrap.connect(address.getHost(), address.getPort());
 
         if (future.awaitUninterruptibly(config.getConnectTimeoutMillis(), TimeUnit.MILLISECONDS)) {
             if (future.channel() != null && future.channel().isActive()) {
-                // 连接成功 添加channel到channelGroup TODO
-                future.channel().pipeline().addLast(new NettyClientHandler(address));
+
+                CopyOnWriteArrayList<Connector> connectors = this.connectorsMap.get(address);
+                if (connectors == null) {
+                    CopyOnWriteArrayList<Connector> newConnectors = new CopyOnWriteArrayList<>();
+                    connectors = connectorsMap.putIfAbsent(address, newConnectors);
+                    if (connectors == null) {
+                        connectors = newConnectors;
+                    }
+                }
+                Connector connector = new Connector(address);
+                connectors.add(connector);
+
+                // 连接成功 添加channel到channelGroup
+                future.channel().pipeline().addLast(new NettyClientHandler(connector));
                 group(address).addChannel(future.channel());
                 logger.info("connect with: {}", future.channel());
 
+                return connector;
             } else {
                 throw new RemotingConnectException(address.toString());
             }
         } else {
-            throw new RemotingConnectException(address.toString());
+            throw new RemotingConnectTimeoutException(address.toString());
         }
     }
 
@@ -269,6 +284,16 @@ public class NettyClient extends NettyServiceAbstract implements RpcClient {
     }
 
     @Override
+    public void cancelReconnect(UnresolvedAddress address) {
+        CopyOnWriteArrayList<Connector> connectors = connectorsMap.get(address);
+        if (Collections.isNotEmpty(connectors)) {
+            for (Connector connector : connectors) {
+                connector.setNeedReconnect(false);
+            }
+        }
+    }
+
+    @Override
     public void shutdown() {
 
     }
@@ -278,20 +303,19 @@ public class NettyClient extends NettyServiceAbstract implements RpcClient {
 
         private Timer timer = new HashedWheelTimer();
 
-        private UnresolvedAddress address;
+        private Connector connector;
 
         private int reties;
 
-        public NettyClientHandler(UnresolvedAddress address) {
-            this.address = address;
+        public NettyClientHandler(Connector connector) {
+            this.connector = connector;
         }
 
         @Override
         public void channelActive(ChannelHandlerContext ctx) throws Exception {
             reties = 0;
-            group(address).addChannel(ctx.channel());
+            group(connector.getAddress()).addChannel(ctx.channel());
             logger.info("reconnect with: {}", ctx.channel());
-
             super.channelActive(ctx);
         }
 
@@ -302,20 +326,27 @@ public class NettyClient extends NettyServiceAbstract implements RpcClient {
 
         @Override
         public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-            if (needReconnect) {
+            if (connector.isNeedReconnect()) {
                 if (reties < 10) {
                     reties++;
                 }
                 timer.newTimeout(this, 2 << reties, TimeUnit.SECONDS);
             }
+            super.channelInactive(ctx);
         }
 
         @Override
         public void run(Timeout timeout) throws Exception {
+            if (!connector.isNeedReconnect()) {
+                logger.warn("Cancel reconnecting with {}.", connector.getAddress());
+                return;
+            }
             reconnect();
         }
 
         private void reconnect() {
+            UnresolvedAddress address = connector.getAddress();
+
             bootstrap.connect(address.getHost(), address.getPort())
                     .addListener(new ChannelFutureListener() {
                         @Override
@@ -402,7 +433,6 @@ public class NettyClient extends NettyServiceAbstract implements RpcClient {
         public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
             final String remoteAddress = ctx.channel().remoteAddress().toString();
             logger.warn("NETTY CLIENT PIPELINE: exceptionCaught {}", remoteAddress);
-            logger.warn("NETTY CLIENT PIPELINE: exceptionCaught exception.", cause);
             ctx.channel().close();
             if (NettyClient.this.channelEventListener != null) {
                 NettyClient.this.putChannelEvent(new ChannelEvent(ChannelEventType.EXCEPTION, remoteAddress, ctx.channel()));

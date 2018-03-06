@@ -11,6 +11,7 @@ import com.leaf.common.utils.Proxies;
 import com.leaf.register.api.NotifyEvent;
 import com.leaf.register.api.NotifyListener;
 import com.leaf.register.api.OfflineListener;
+import com.leaf.remoting.api.channel.ChannelGroup;
 import com.leaf.rpc.balancer.RandomRobinLoadBalancer;
 import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.InvokeType;
@@ -167,6 +168,7 @@ public class ProxyFactory {
             consumer.subscribe(serviceMeta, new NotifyListener() {
                 @Override
                 public void notify(RegisterMeta registerMeta, NotifyEvent event) {
+                    ChannelGroup group = consumer.client().group(registerMeta.getAddress());
                     switch (event) {
                         case ADD: {
                             if (!consumer.client().hasAvailableChannelGroup(registerMeta.getAddress())) {
@@ -186,7 +188,10 @@ public class ProxyFactory {
                                 consumer.offlineListening(registerMeta.getAddress(), new OfflineListener() {
                                     @Override
                                     public void offline() {
-                                        consumer.client().removeChannelGroup(serviceMeta, registerMeta.getAddress());
+                                        consumer.client().cancelReconnect(registerMeta.getAddress());
+                                        if (!group.isAvailable()) {
+                                            consumer.client().removeChannelGroup(serviceMeta, registerMeta.getAddress());
+                                        }
                                     }
                                 });
                             }
@@ -194,6 +199,7 @@ public class ProxyFactory {
                         }
                         case REMOVE: {
                             consumer.client().removeChannelGroup(serviceMeta, registerMeta.getAddress());
+                            group.removeWeight(serviceMeta);
                             break;
                         }
                     }
