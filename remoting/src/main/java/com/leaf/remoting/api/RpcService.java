@@ -4,5 +4,5 @@ public interface RpcService {
 
     void start();
 
-    void shutdown();
+    void shutdownGracefully();
 }

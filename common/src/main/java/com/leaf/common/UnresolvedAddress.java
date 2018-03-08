@@ -1,22 +1,10 @@
 package com.leaf.common;
 
-/**
- * The type Unresolved address.
- *
- * @author yefei
- * @date 2017 -6-26 11:08:57
- */
 public class UnresolvedAddress {
 
     private final String host;
     private final int port;
 
-    /**
-     * Instantiates a new Unresolved address.
-     *
-     * @param host the host
-     * @param port the port
-     */
     public UnresolvedAddress(String host, int port) {
         if (host == null || "".equals(host)) {
             throw new NullPointerException("host is null!");
@@ -29,20 +17,10 @@ public class UnresolvedAddress {
         this.port = port;
     }
 
-    /**
-     * Gets host.
-     *
-     * @return the host
-     */
     public String getHost() {
         return host;
     }
 
-    /**
-     * Gets port.
-     *
-     * @return the port
-     */
     public int getPort() {
         return port;
     }

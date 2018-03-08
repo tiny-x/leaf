@@ -321,4 +321,10 @@ public class DefaultRegisterClient {
         }
     }
 
+
+    public void shutdownGracefully() {
+        if (resendMessageTimer != null) {
+            resendMessageTimer.shutdown();
+        }
+    }
 }

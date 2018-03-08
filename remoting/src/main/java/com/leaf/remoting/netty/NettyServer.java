@@ -18,12 +18,10 @@ import io.netty.channel.socket.nio.NioServerSocketChannel;
 import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Objects;
-import java.util.TimerTask;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -245,12 +243,22 @@ public class NettyServer extends NettyServiceAbstract implements RpcServer {
     }
 
     @Override
-    public void shutdown() {
-        if (Objects.nonNull(nioEventLoopGroupMain)) {
-            nioEventLoopGroupMain.shutdownGracefully();
-        }
-        if (Objects.nonNull(nioEventLoopGroupWorker)) {
-            nioEventLoopGroupWorker.shutdownGracefully();
+    public void shutdownGracefully() {
+        try {
+            if (nioEventLoopGroupMain != null) {
+                nioEventLoopGroupMain.shutdownGracefully();
+            }
+            if (nioEventLoopGroupWorker != null) {
+                nioEventLoopGroupWorker.shutdownGracefully();
+            }
+            if (publicExecutorService != null) {
+                publicExecutorService.shutdown();
+            }
+            if (scanResponseTableExecutorService != null) {
+                scanResponseTableExecutorService.shutdown();
+            }
+        } catch (Exception e) {
+            logger.error("netty server shutdown gracefully error!", e);
         }
     }
 

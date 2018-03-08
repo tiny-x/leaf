@@ -34,6 +34,10 @@ public abstract class AbstractDispatcher implements Dispatcher {
     private LoadBalancer loadBalancer;
     private SerializerType serializerType;
 
+    public AbstractDispatcher(Consumer consumer, SerializerType serializerType) {
+        this(consumer, null, serializerType);
+    }
+
     public AbstractDispatcher(Consumer consumer, LoadBalancer loadBalancer, SerializerType serializerType) {
         this.consumer = consumer;
         this.loadBalancer = loadBalancer;

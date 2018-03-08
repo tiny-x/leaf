@@ -1,6 +1,5 @@
 package com.leaf.rpc;
 
-import com.google.common.base.Strings;
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.annotation.ServiceInterface;
 import com.leaf.common.constants.Constants;
@@ -12,7 +11,8 @@ import com.leaf.register.api.NotifyEvent;
 import com.leaf.register.api.NotifyListener;
 import com.leaf.register.api.OfflineListener;
 import com.leaf.remoting.api.channel.ChannelGroup;
-import com.leaf.rpc.balancer.RandomRobinLoadBalancer;
+import com.leaf.rpc.balancer.LoadBalancerFactory;
+import com.leaf.rpc.balancer.LoadBalancerType;
 import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.StrategyConfig;
@@ -23,7 +23,6 @@ import com.leaf.rpc.consumer.dispatcher.DispatchType;
 import com.leaf.rpc.consumer.dispatcher.Dispatcher;
 import com.leaf.rpc.consumer.invoke.DefaultInvoker;
 import com.leaf.serialization.api.SerializerType;
-import io.netty.util.internal.SystemPropertyUtil;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -35,12 +34,7 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class ProxyFactory {
 
-    private static final SerializerType serializerType;
-
-    static {
-        serializerType = SerializerType.parse(
-                (byte) SystemPropertyUtil.getInt("serializer.serializerType", SerializerType.PROTO_STUFF.value()));
-    }
+    private SerializerType serializerType = SerializerType.PROTO_STUFF;
 
     private String group;
 
@@ -57,7 +51,8 @@ public class ProxyFactory {
     private InvokeType invokeType = InvokeType.SYNC;
     private ClusterInvoker.Strategy strategy = ClusterInvoker.Strategy.FAIL_FAST;
     private int retries = 0;
-    private Dispatcher dispatcher;
+    private DispatchType dispatchType = DispatchType.ROUND;
+    private LoadBalancerType loadBalancerType = LoadBalancerType.RANDOM;
 
     private ProxyFactory() {
     }
@@ -122,26 +117,20 @@ public class ProxyFactory {
         return this;
     }
 
-    public ProxyFactory dispatcher(DispatchType dispatchType) {
-        switch (dispatchType) {
-            case BROADCAST: {
-                dispatcher = new DefaultBroadcastDispatcher(
-                        consumer,
-                        RandomRobinLoadBalancer.instance(),
-                        serializerType);
-                break;
-            }
-            case ROUND: {
-                dispatcher = new DefaultRoundDispatcher(
-                        consumer,
-                        RandomRobinLoadBalancer.instance(),
-                        serializerType);
-                break;
-            }
-        }
+    public ProxyFactory loadBalancerType(LoadBalancerType loadBalancerType) {
+        this.loadBalancerType = loadBalancerType;
         return this;
     }
 
+    public ProxyFactory dispatchType(DispatchType dispatchType) {
+        this.dispatchType = dispatchType;
+        return this;
+    }
+
+    public ProxyFactory serializerType(SerializerType serializerType) {
+        this.serializerType = serializerType;
+        return this;
+    }
 
     @SuppressWarnings("unchecked")
     public <T> T newProxy() {
@@ -156,9 +145,9 @@ public class ProxyFactory {
             group = annotationInterface.group();
         }
 
-        ServiceMeta serviceMeta = new ServiceMeta(group,
-                Strings.isNullOrEmpty(serviceProviderName) ? interfaceClass.getName() : serviceProviderName,
-                Strings.isNullOrEmpty(version) ? Constants.SERVICE_VERSION : version);
+        ServiceMeta serviceMeta = new ServiceMeta(group == null ? Constants.DEFAULT_SERVICE_GROUP : group,
+                serviceProviderName == null ? interfaceClass.getName() : serviceProviderName,
+                version == null ? Constants.DEFAULT_SERVICE_VERSION : version);
 
         for (UnresolvedAddress address : addresses) {
             consumer.client().addChannelGroup(serviceMeta, address);
@@ -207,11 +196,16 @@ public class ProxyFactory {
             });
         }
 
-        if (dispatcher == null) {
-            dispatcher = new DefaultRoundDispatcher(
-                    consumer,
-                    RandomRobinLoadBalancer.instance(),
-                    serializerType);
+        Dispatcher dispatcher;
+        switch (dispatchType) {
+            case ROUND:
+                dispatcher = new DefaultRoundDispatcher(consumer, LoadBalancerFactory.instance(loadBalancerType), serializerType);
+                break;
+            case BROADCAST:
+                dispatcher =  new DefaultBroadcastDispatcher(consumer, serializerType);
+                break;
+            default:
+                throw new UnsupportedOperationException("dispatchType: " + dispatchType);
         }
         dispatcher.timeoutMillis(timeoutMillis <= 0 ? Constants.DEFAULT_INVOKE_TIMEOUT : timeoutMillis);
 

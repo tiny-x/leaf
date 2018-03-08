@@ -15,9 +15,6 @@ import java.util.concurrent.CopyOnWriteArrayList;
 
 public abstract class AbstractRegisterService implements RegisterService {
 
-    /**
-     * logger
-     */
     private final static Logger logger = LoggerFactory.getLogger(AbstractRegisterService.class);
 
     /**

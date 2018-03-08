@@ -15,6 +15,8 @@ public class DefaultRegisterServer implements RegisterServer {
 
     private final NettyServerConfig nettyServerConfig;
 
+    private final RegisterProcess requestProcessor;
+
     public DefaultRegisterServer() {
         this(new NettyServerConfig());
     }
@@ -22,7 +24,7 @@ public class DefaultRegisterServer implements RegisterServer {
     public DefaultRegisterServer(NettyServerConfig config) {
         config.setPort(DEFAULT_PORT);
         this.nettyServerConfig = config;
-        RegisterProcess requestProcessor = new RegisterProcess(this);
+        this.requestProcessor  = new RegisterProcess(this);
         this.rpcServer = new NettyServer(config, requestProcessor.new RegisterChannelEventProcess());
         this.rpcServer.registerRequestProcess(requestProcessor, Executors.newCachedThreadPool());
     }
@@ -38,5 +40,10 @@ public class DefaultRegisterServer implements RegisterServer {
 
     public NettyServerConfig getNettyServerConfig() {
         return nettyServerConfig;
+    }
+
+    @Override
+    public void shutdownGracefully() {
+        requestProcessor.shutdownGracefully();
     }
 }

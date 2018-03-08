@@ -34,7 +34,7 @@ public class DefaultRegisterService extends AbstractRegisterService implements R
                     registerClient = newRegisterClient;
                     registerClient.connect(unresolvedAddress);
                 } else {
-                    // newRegisterClient shutdown
+                    newRegisterClient.shutdownGracefully();
                 }
             }
         }

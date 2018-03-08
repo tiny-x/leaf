@@ -294,8 +294,20 @@ public class NettyClient extends NettyServiceAbstract implements RpcClient {
     }
 
     @Override
-    public void shutdown() {
-
+    public void shutdownGracefully() {
+        try {
+            if (nioEventLoopGroupWorker != null) {
+                nioEventLoopGroupWorker.shutdownGracefully();
+            }
+            if (publicExecutorService != null) {
+                publicExecutorService.shutdown();
+            }
+            if (scanResponseTableExecutorService != null) {
+                scanResponseTableExecutorService.shutdown();
+            }
+        } catch (Exception e) {
+            logger.error("netty client shutdown gracefully error!", e);
+        }
     }
 
     @ChannelHandler.Sharable

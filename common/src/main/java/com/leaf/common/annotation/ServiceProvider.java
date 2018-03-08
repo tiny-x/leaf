@@ -16,7 +16,7 @@ public @interface ServiceProvider {
      *
      * @return
      */
-    String version() default Constants.SERVICE_VERSION;
+    String version() default Constants.DEFAULT_SERVICE_VERSION;
 
     /**
      * 权重

@@ -40,7 +40,7 @@ public class ConsumerBroadcastExample {
                 .directory(serviceMeta)
                 .timeMillis(3000L)
                 .invokeType(InvokeType.ASYNC)
-                .dispatcher(DispatchType.BROADCAST)
+                .dispatchType(DispatchType.BROADCAST)
                 .newProxy();
 
         String s = helloService.sayHello(" biu biu biu!!!");

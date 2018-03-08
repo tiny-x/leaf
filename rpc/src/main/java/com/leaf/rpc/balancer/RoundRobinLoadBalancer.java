@@ -8,14 +8,14 @@ import com.leaf.remoting.api.channel.ChannelGroup;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
-public class RandomRobinLoadBalancer implements LoadBalancer {
+public class RoundRobinLoadBalancer implements LoadBalancer {
 
     private AtomicInteger integer = new AtomicInteger(0);
 
-    private RandomRobinLoadBalancer() {}
+    private RoundRobinLoadBalancer() {}
 
-    public static RandomRobinLoadBalancer instance() {
-        return new RandomRobinLoadBalancer();
+    public static RoundRobinLoadBalancer instance() {
+        return new RoundRobinLoadBalancer();
     }
     
     @Override

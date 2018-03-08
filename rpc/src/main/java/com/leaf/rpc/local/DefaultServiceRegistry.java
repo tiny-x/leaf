@@ -108,12 +108,10 @@ public final class DefaultServiceRegistry implements ServiceRegistry {
             group = annotationInterface.group();
         }
 
-        checkNotNull(group,"group");
-
         ServiceWrapper wrapper = new ServiceWrapper(
-                group,
+                group == null ? Constants.DEFAULT_SERVICE_GROUP : group,
                 providerName == null ? interfaceClass.getName() : providerName,
-                version == null ? Constants.SERVICE_VERSION : version,
+                version == null ? Constants.DEFAULT_SERVICE_VERSION : version,
                 serviceProvider);
 
         serviceProviderContainer.registerService(wrapper.getServiceMeta().directory(), wrapper);

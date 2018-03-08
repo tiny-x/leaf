@@ -17,9 +17,8 @@ import com.leaf.serialization.api.SerializerType;
  */
 public class DefaultBroadcastDispatcher extends AbstractDispatcher {
 
-    public DefaultBroadcastDispatcher(
-            Consumer consumer, LoadBalancer loadBalancer, SerializerType serializerType) {
-        super(consumer, loadBalancer, serializerType);
+    public DefaultBroadcastDispatcher(Consumer consumer, SerializerType serializerType) {
+        super(consumer, serializerType);
     }
 
     @Override

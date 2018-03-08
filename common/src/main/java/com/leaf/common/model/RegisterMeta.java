@@ -48,6 +48,28 @@ public class RegisterMeta {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+
+        RegisterMeta that = (RegisterMeta) o;
+
+        if (getConnCount() != that.getConnCount()) return false;
+        if (getWeight() != that.getWeight()) return false;
+        if (!getServiceMeta().equals(that.getServiceMeta())) return false;
+        return getAddress().equals(that.getAddress());
+    }
+
+    @Override
+    public int hashCode() {
+        int result = getServiceMeta().hashCode();
+        result = 31 * result + getAddress().hashCode();
+        result = 31 * result + getConnCount();
+        result = 31 * result + getWeight();
+        return result;
+    }
+
+    @Override
     public String toString() {
         return "RegisterMeta{" +
                 "serviceMeta=" + serviceMeta +

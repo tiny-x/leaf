@@ -7,4 +7,6 @@ public interface RegisterServer {
 
     void start();
 
+    void shutdownGracefully();
+
 }

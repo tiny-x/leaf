@@ -429,4 +429,14 @@ public class RegisterProcess implements RequestProcessor {
         }
     }
 
+    public void shutdownGracefully() {
+        try {
+            if (resendMessageTimer != null) {
+                resendMessageTimer.shutdown();
+            }
+        } catch (Exception e) {
+            logger.error("register shutdown gracefully error!", e);
+        }
+    }
+
 }

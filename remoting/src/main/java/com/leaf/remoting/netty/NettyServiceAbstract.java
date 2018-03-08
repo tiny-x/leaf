@@ -18,8 +18,8 @@ import com.leaf.serialization.api.SerializerFactory;
 import com.leaf.serialization.api.SerializerType;
 import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelFutureListener;
 import io.netty.channel.ChannelHandlerContext;
-
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -141,25 +141,28 @@ public abstract class NettyServiceAbstract {
 
         if (defaultProcessor.getA() != null && defaultProcessor.getB() != null) {
             try {
-                defaultProcessor.getB().submit(() -> {
-                    ResponseCommand responseCommand = null;
-                    if (defaultProcessor.getA().rejectRequest()) {
-                        String message = "[REJECT_REQUEST] system busy, start flow control for a while";
-                        responseWrapper.setResult(message);
-                        logger.warn(message);
-                        if (!cmd.isOneWay()) {
-                            responseCommand = RemotingCommandFactory.createResponseCommand(
-                                    cmd.getSerializerCode(),
-                                    serializer.serialize(responseWrapper),
-                                    cmd.getInvokeId()
-                            );
-                            responseCommand.setStatus(ResponseStatus.FLOW_CONTROL.value());
+                defaultProcessor.getB().submit(new Runnable() {
+                    @Override
+                    public void run() {
+                        ResponseCommand responseCommand = null;
+                        if (defaultProcessor.getA().rejectRequest()) {
+                            String message = "[REJECT_REQUEST] system busy, start flow control for a while";
+                            responseWrapper.setResult(message);
+                            logger.warn(message);
+                            if (!cmd.isOneWay()) {
+                                responseCommand = RemotingCommandFactory.createResponseCommand(
+                                        cmd.getSerializerCode(),
+                                        serializer.serialize(responseWrapper),
+                                        cmd.getInvokeId()
+                                );
+                                responseCommand.setStatus(ResponseStatus.FLOW_CONTROL.value());
+                            }
+                        } else {
+                            responseCommand = defaultProcessor.getA().process(ctx, cmd);
                         }
-                    } else {
-                        responseCommand = defaultProcessor.getA().process(ctx, cmd);
-                    }
-                    if (responseCommand != null) {
-                        ctx.channel().writeAndFlush(responseCommand);
+                        if (responseCommand != null) {
+                            ctx.channel().writeAndFlush(responseCommand);
+                        }
                     }
                 });
             } catch (RejectedExecutionException e) {
@@ -200,12 +203,16 @@ public abstract class NettyServiceAbstract {
         ResponseFuture<ResponseCommand> responseFuture = new ResponseFuture<>(timeUnit.convert(timeout, TimeUnit.MILLISECONDS));
         responseTable.putIfAbsent(request.getInvokeId(), responseFuture);
         try {
-            channel.writeAndFlush(request).addListener((ChannelFuture future) -> {
-                if (!future.isSuccess()) {
-                    responseTable.remove(request.getInvokeId());
-                    responseFuture.complete(null);
-                    responseFuture.failure(future.cause());
-                    logger.warn("send a request command to channel <" + channel + "> failed.");
+            channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
+                @Override
+                public void operationComplete(ChannelFuture channelFuture) throws Exception {
+
+                    if (!channelFuture.isSuccess()) {
+                        responseTable.remove(request.getInvokeId());
+                        responseFuture.complete(null);
+                        responseFuture.failure(channelFuture.cause());
+                        logger.warn("send a request command to channel <" + channel + "> failed.");
+                    }
                 }
             });
             ResponseCommand response = responseFuture.get(timeout, timeUnit);
@@ -224,7 +231,7 @@ public abstract class NettyServiceAbstract {
     }
 
     protected void invokeAsync0(final Channel channel, final RequestCommand request,
-                                 long timeout, TimeUnit timeUnit, InvokeCallback<ResponseCommand> invokeCallback)
+                                long timeout, TimeUnit timeUnit, InvokeCallback<ResponseCommand> invokeCallback)
             throws RemotingException, InterruptedException {
 
         if (semaphoreAsync.tryAcquire(timeout, timeUnit)) {
@@ -237,15 +244,17 @@ public abstract class NettyServiceAbstract {
             responseTable.put(request.getInvokeId(), responseFuture);
 
             try {
-                channel.writeAndFlush(request).addListener((ChannelFuture future) -> {
-
-                    if (!future.isSuccess()) {
-                        responseTable.remove(request.getInvokeId());
-                        responseFuture.complete(null);
-                        responseFuture.executeInvokeCallback();
-                        responseFuture.failure(future.cause());
-                        responseFuture.release();
-                        logger.warn("send a request command to channel <" + channel + "> failed.");
+                channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
+                    @Override
+                    public void operationComplete(ChannelFuture channelFuture) throws Exception {
+                        if (!channelFuture.isSuccess()) {
+                            responseTable.remove(request.getInvokeId());
+                            responseFuture.complete(null);
+                            responseFuture.executeInvokeCallback();
+                            responseFuture.failure(channelFuture.cause());
+                            responseFuture.release();
+                            logger.warn("send a request command to channel <" + channel + "> failed.");
+                        }
                     }
                 });
             } catch (Exception e) {
@@ -277,10 +286,14 @@ public abstract class NettyServiceAbstract {
         if (semaphoreAsync.tryAcquire(timeout, timeUnit)) {
             SemaphoreReleaseOnce semaphoreReleaseOnce = new SemaphoreReleaseOnce(semaphoreAsync);
             try {
-                channel.writeAndFlush(request).addListener((ChannelFuture future) -> {
-                    semaphoreReleaseOnce.release();
-                    if (!future.isSuccess()) {
-                        logger.warn("send a request command to channel <" + channel + "> failed.");
+                channel.writeAndFlush(request).addListener(new ChannelFutureListener() {
+                    @Override
+                    public void operationComplete(ChannelFuture channelFuture) throws Exception {
+
+                        semaphoreReleaseOnce.release();
+                        if (!channelFuture.isSuccess()) {
+                            logger.warn("send a request command to channel <" + channel + "> failed.");
+                        }
                     }
                 });
             } catch (Exception e) {
@@ -357,7 +370,6 @@ public abstract class NettyServiceAbstract {
                 }
             }
         }
-
     }
 
 }

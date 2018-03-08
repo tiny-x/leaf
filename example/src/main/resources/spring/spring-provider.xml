@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:leaf="https://github.com/mountain-giant"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd https://github.com/mountain-giant https://github.com/mountain-giant/leaf.xsd">
+
+    <bean id="helloService" class="com.leaf.example.spring.HelloServiceImpl"/>
+
+    <leaf:provider id="provider">
+        <leaf:property port="9180" />
+        <leaf:property registryServer="127.0.0.1:9876"/>
+    </leaf:provider>
+
+    <leaf:service provider="provider" interfaceClass="com.leaf.example.spring.HelloService" ref="helloService"/>
+
+</beans>

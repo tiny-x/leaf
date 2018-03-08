@@ -9,7 +9,7 @@ import com.leaf.common.model.ServiceMeta;
 import com.leaf.register.api.NotifyEvent;
 import com.leaf.register.api.NotifyListener;
 import com.leaf.register.api.OfflineListener;
-import com.leaf.rpc.balancer.RandomRobinLoadBalancer;
+import com.leaf.rpc.balancer.RoundRobinLoadBalancer;
 import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.StrategyConfig;
@@ -115,7 +115,7 @@ public class GenericProxyFactory {
         ServiceMeta serviceMeta = new ServiceMeta(
                 group,
                 serviceProviderName,
-                Strings.isNullOrEmpty(version) ? Constants.SERVICE_VERSION : version);
+                Strings.isNullOrEmpty(version) ? Constants.DEFAULT_SERVICE_VERSION : version);
 
         for (UnresolvedAddress address : addresses) {
             consumer.client().addChannelGroup(serviceMeta, address);
@@ -161,7 +161,7 @@ public class GenericProxyFactory {
 
         Dispatcher dispatcher = new DefaultRoundDispatcher(
                 consumer,
-                RandomRobinLoadBalancer.instance(),
+                RoundRobinLoadBalancer.instance(),
                 serializerType);
 
         dispatcher.timeoutMillis(timeoutMillis);
