@@ -24,8 +24,14 @@
 
         <dependency>
             <groupId>com.leaf-rpc</groupId>
-            <artifactId>remoting</artifactId>
+            <artifactId>remoting-api</artifactId>
         </dependency>
+
+        <dependency>
+            <groupId>com.leaf-rpc</groupId>
+            <artifactId>remoting-netty</artifactId>
+        </dependency>
+
         <dependency>
             <groupId>com.leaf-rpc</groupId>
             <artifactId>register-api</artifactId>

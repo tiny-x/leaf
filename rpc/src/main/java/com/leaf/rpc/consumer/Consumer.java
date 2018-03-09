@@ -6,13 +6,13 @@ import com.leaf.common.model.RegisterMeta;
 import com.leaf.register.api.NotifyListener;
 import com.leaf.register.api.OfflineListener;
 import com.leaf.register.api.RegisterService;
-import com.leaf.remoting.api.RpcClient;
+import com.leaf.remoting.api.RemotingClient;
 
 import java.util.List;
 
 public interface Consumer {
 
-    RpcClient client() ;
+    RemotingClient client() ;
 
     String application();
 

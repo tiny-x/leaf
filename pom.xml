@@ -12,11 +12,24 @@
     <dependencyManagement>
 
         <dependencies>
+
+            <!-- remoting -->
             <dependency>
                 <groupId>com.leaf-rpc</groupId>
                 <artifactId>remoting</artifactId>
                 <version>1.0.0</version>
             </dependency>
+            <dependency>
+                <groupId>com.leaf-rpc</groupId>
+                <artifactId>remoting-api</artifactId>
+                <version>1.0.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.leaf-rpc</groupId>
+                <artifactId>remoting-netty</artifactId>
+                <version>1.0.0</version>
+            </dependency>
+            <!-- remoting -->
 
             <dependency>
                 <groupId>com.leaf-rpc</groupId>
@@ -78,11 +91,13 @@
             </dependency>
             <!-- register end-->
 
+            <!-- spring-support -->
             <dependency>
                 <groupId>com.leaf-rpc</groupId>
                 <artifactId>spring-support</artifactId>
                 <version>1.0.0</version>
             </dependency>
+            <!-- spring-support -->
 
             <dependency>
                 <groupId>io.netty</groupId>

@@ -1,7 +1,7 @@
 package com.leaf.register;
 
 import com.leaf.register.process.RegisterProcess;
-import com.leaf.remoting.api.RpcServer;
+import com.leaf.remoting.api.RemotingServer;
 import com.leaf.remoting.netty.NettyServer;
 import com.leaf.remoting.netty.NettyServerConfig;
 
@@ -11,7 +11,7 @@ public class DefaultRegisterServer implements RegisterServer {
 
     private static final int DEFAULT_PORT = 9876;
 
-    private final RpcServer rpcServer;
+    private final RemotingServer rpcServer;
 
     private final NettyServerConfig nettyServerConfig;
 
@@ -34,7 +34,7 @@ public class DefaultRegisterServer implements RegisterServer {
         rpcServer.start();
     }
 
-    public RpcServer getRpcServer() {
+    public RemotingServer getRpcServer() {
         return rpcServer;
     }
 

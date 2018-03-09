@@ -10,6 +10,12 @@
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>remoting</artifactId>
+    <packaging>pom</packaging>
+
+    <modules>
+        <module>remoting-api</module>
+        <module>remoting-netty</module>
+    </modules>
 
     <dependencies>
         <dependency>
@@ -20,17 +26,6 @@
         <dependency>
             <groupId>com.leaf-rpc</groupId>
             <artifactId>serialization-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-all</artifactId>
-        </dependency>
-
-        <!-- Test -->
-        <dependency>
-            <groupId>junit</groupId>
-            <artifactId>junit</artifactId>
         </dependency>
 
     </dependencies>

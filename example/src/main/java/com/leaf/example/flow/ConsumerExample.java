@@ -2,7 +2,7 @@ package com.leaf.example.flow;
 
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.model.ServiceMeta;
-import com.leaf.remoting.exception.RemotingConnectException;
+import com.leaf.remoting.api.exception.RemotingConnectException;
 import com.leaf.remoting.netty.NettyClientConfig;
 import com.leaf.rpc.ProxyFactory;
 import com.leaf.rpc.consumer.Consumer;

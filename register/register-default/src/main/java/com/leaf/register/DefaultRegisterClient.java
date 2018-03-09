@@ -47,7 +47,7 @@ public class DefaultRegisterClient {
                 (byte) SystemPropertyUtil.getInt("serializer.serializerType", SerializerType.PROTO_STUFF.value()));
     }
 
-    private final RpcClient rpcClient;
+    private final RemotingClient rpcClient;
     private final NettyClientConfig config = new NettyClientConfig();
     private final AbstractRegisterService registerService;
     private final ConcurrentHashMap<Long, ResendMessage> resendMessages = new ConcurrentHashMap<>();

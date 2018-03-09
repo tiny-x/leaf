@@ -6,7 +6,7 @@ import com.leaf.common.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.common.utils.AnyThrow;
 import com.leaf.register.api.*;
-import com.leaf.remoting.api.RpcClient;
+import com.leaf.remoting.api.RemotingClient;
 import com.leaf.remoting.netty.NettyClient;
 import com.leaf.remoting.netty.NettyClientConfig;
 
@@ -18,7 +18,7 @@ public class DefaultConsumer implements Consumer {
 
     private String application;
 
-    private RpcClient rpcClient;
+    private RemotingClient rpcClient;
 
     private RegisterService registerService = null;
 
@@ -35,7 +35,7 @@ public class DefaultConsumer implements Consumer {
     }
 
     @Override
-    public RpcClient client() {
+    public RemotingClient client() {
         return rpcClient;
     }
 

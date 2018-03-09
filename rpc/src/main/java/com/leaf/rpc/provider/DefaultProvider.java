@@ -8,7 +8,7 @@ import com.leaf.common.utils.InetUtils;
 import com.leaf.register.api.RegisterFactory;
 import com.leaf.register.api.RegisterService;
 import com.leaf.register.api.RegisterType;
-import com.leaf.remoting.api.RpcServer;
+import com.leaf.remoting.api.RemotingServer;
 import com.leaf.remoting.netty.NettyServer;
 import com.leaf.remoting.netty.NettyServerConfig;
 import com.leaf.rpc.container.DefaultServiceProviderContainer;
@@ -22,7 +22,7 @@ import com.leaf.rpc.provider.process.DefaultProviderProcessor;
 
 public class DefaultProvider implements Provider {
 
-    private RpcServer server;
+    private RemotingServer server;
 
     private ServiceProviderContainer serviceProviderContainer;
 
