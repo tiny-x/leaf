@@ -112,7 +112,8 @@ public final class DefaultServiceRegistry implements ServiceRegistry {
                 group == null ? Constants.DEFAULT_SERVICE_GROUP : group,
                 providerName == null ? interfaceClass.getName() : providerName,
                 version == null ? Constants.DEFAULT_SERVICE_VERSION : version,
-                serviceProvider);
+                serviceProvider,
+                weight);
 
         serviceProviderContainer.registerService(wrapper.getServiceMeta().directory(), wrapper);
 

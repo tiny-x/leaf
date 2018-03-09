@@ -1,16 +1,40 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <beans xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xmlns="http://www.springframework.org/schema/beans" xmlns:leaf="https://github.com/mountain-giant"
+       xmlns:leaf="https://github.com/mountain-giant" xmlns="http://www.springframework.org/schema/beans"
        xsi:schemaLocation="http://www.springframework.org/schema/beans
        http://www.springframework.org/schema/beans/spring-beans.xsd
        https://github.com/mountain-giant
        https://github.com/mountain-giant/leaf.xsd">
 
     <leaf:consumer id="consumer">
-        <leaf:property timeout="3000"/>
         <leaf:property registryServer="127.0.0.1:9876"/>
     </leaf:consumer>
 
-    <leaf:reference id="helloService" consumer="consumer" interfaceClass="com.leaf.example.spring.HelloService" timeout="3000"/>
+    <leaf:reference id="helloService" consumer="consumer" interfaceClass="com.leaf.example.spring.HelloService">
+        <!-- default leaf -->
+        <leaf:property group="spring-demo"/>
+        <!-- default class.getName() -->
+        <leaf:property serviceProviderName="[test]com.leaf.example.spring.HelloService"/>
+        <!-- default 1.0.0 -->
+        <leaf:property version="1.1.0"/>
+        <!-- default 3000 -->
+        <leaf:property timeout="3000"/>
+        <!--ROUND, // 单播 BROADCAST;  // 广播 -->
+        <leaf:property dispatchType="ROUND"/>
+        <!-- PROTO_STUFF, HESSIAN, KRYO,JAVA -->
+        <leaf:property serializerType="PROTO_STUFF" />
+        <!--RANDOM // 加权随机, ROUND_ROBIN 加权轮询-->
+        <leaf:property loadBalancerType="RANDOM" />
+        <!--
+            FAIL_FAST,  // 快速失败
+            FAIL_OVER,  // 失败重试
+            FAIL_SAFE,  // 失败安全
+        -->
+        <leaf:property strategy="FAIL_FAST" />
+        <!-- retries 对FAIL_OVER 有效 -->
+        <leaf:property retries="0" />
+        <!--SYNC //同步, ASYNC //异步, ONE_WAY//单向 -->
+        <leaf:property invokeType="SYNC"/>
+    </leaf:reference>
 
 </beans>

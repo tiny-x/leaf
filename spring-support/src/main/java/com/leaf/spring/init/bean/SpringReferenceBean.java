@@ -13,9 +13,13 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class SpringReferenceBean<T> implements FactoryBean<T>, InitializingBean {
 
+    //----------------------
     private String group;
 
+    private String serviceProviderName;
+
     private String version;
+    // -----------------------
 
     private Class<T> interfaceClass;
 
@@ -45,10 +49,13 @@ public class SpringReferenceBean<T> implements FactoryBean<T>, InitializingBean 
 
         ProxyFactory factory = ProxyFactory.factory(interfaceClass);
         factory.consumer(consumer.getConsumer())
-                .serviceProviderName(interfaceClass.getName())
                 .group(group)
                 .version(version)
                 .timeMillis(timeout);
+
+        if (serviceProviderName != null) {
+            factory.serviceProviderName(serviceProviderName);
+        }
 
         if (loadBalancerType != null) {
             factory.loadBalancerType(loadBalancerType);
@@ -152,5 +159,13 @@ public class SpringReferenceBean<T> implements FactoryBean<T>, InitializingBean 
 
     public void setRetries(int retries) {
         this.retries = retries;
+    }
+
+    public String getServiceProviderName() {
+        return serviceProviderName;
+    }
+
+    public void setServiceProviderName(String serviceProviderName) {
+        this.serviceProviderName = serviceProviderName;
     }
 }

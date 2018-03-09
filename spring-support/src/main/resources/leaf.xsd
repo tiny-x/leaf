@@ -50,12 +50,6 @@
     </xsd:complexType>
 
     <xsd:complexType name="consumerPropertyType">
-        <xsd:attribute name="timeout" type="xsd:long" use="optional">
-            <xsd:annotation>
-                <xsd:documentation><![CDATA[ The consumer global invoke timeout. ]]></xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
-
         <xsd:attribute name="registryServer" type="xsd:string" use="optional">
             <xsd:annotation>
                 <xsd:documentation><![CDATA[ connect To registryServer. ]]></xsd:documentation>
@@ -64,30 +58,40 @@
     </xsd:complexType>
 
     <xsd:complexType name="serviceType">
+        <xsd:complexContent>
+            <xsd:extension base="idType">
+                <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                    <xsd:element name="property" type="servicePropertyType"/>
+                </xsd:choice>
 
-        <xsd:attribute name="interfaceClass" type="xsd:string" use="required">
-            <xsd:annotation>
-                <xsd:documentation><![CDATA[ The service class. ]]></xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
+                <xsd:attribute name="interfaceClass" type="xsd:string" use="required">
+                    <xsd:annotation>
+                        <xsd:documentation><![CDATA[ The service class. ]]></xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
 
-        <xsd:attribute name="provider" type="xsd:string" use="required">
-            <xsd:annotation>
-                <xsd:documentation><![CDATA[ The service belong to which server. ]]></xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
+                <xsd:attribute name="provider" type="xsd:string" use="required">
+                    <xsd:annotation>
+                        <xsd:documentation><![CDATA[ The service belong to which server. ]]></xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
 
-        <xsd:attribute name="ref" type="xsd:string" use="required">
-            <xsd:annotation>
-                <xsd:documentation><![CDATA[ The service implement. ]]></xsd:documentation>
-            </xsd:annotation>
-        </xsd:attribute>
-
+                <xsd:attribute name="ref" type="xsd:string" use="required">
+                    <xsd:annotation>
+                        <xsd:documentation><![CDATA[ The service implement. ]]></xsd:documentation>
+                    </xsd:annotation>
+                </xsd:attribute>
+            </xsd:extension>
+        </xsd:complexContent>
     </xsd:complexType>
 
     <xsd:complexType name="referenceType">
         <xsd:complexContent>
             <xsd:extension base="idType">
+                <xsd:choice minOccurs="0" maxOccurs="unbounded">
+                    <xsd:element name="property" type="referencePropertyType"/>
+                </xsd:choice>
+
                 <xsd:attribute name="consumer" type="xsd:string" use="required">
                     <xsd:annotation>
                         <xsd:documentation><![CDATA[ The reference client. ]]></xsd:documentation>
@@ -96,17 +100,101 @@
 
                 <xsd:attribute name="interfaceClass" type="xsd:string" use="required">
                     <xsd:annotation>
-                        <xsd:documentation><![CDATA[ The reference class. ]]></xsd:documentation>
-                    </xsd:annotation>
-                </xsd:attribute>
-
-                <xsd:attribute name="timeout" type="xsd:long" use="optional">
-                    <xsd:annotation>
-                        <xsd:documentation><![CDATA[ The reference class invoke timeout. ]]></xsd:documentation>
+                        <xsd:documentation><![CDATA[ The service. ]]></xsd:documentation>
                     </xsd:annotation>
                 </xsd:attribute>
             </xsd:extension>
         </xsd:complexContent>
+    </xsd:complexType>
+
+    <xsd:complexType name="servicePropertyType">
+
+        <xsd:attribute name="weight" type="xsd:int" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[ The provider service weight. ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+
+        <xsd:attribute name="group" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[ The service group. ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+
+        <xsd:attribute name="serviceProviderName" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[ The service serviceProviderName. ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+
+        <xsd:attribute name="version" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[ The service version. ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+    </xsd:complexType>
+
+    <xsd:complexType name="referencePropertyType">
+        <xsd:attribute name="group" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[ The service group. ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+
+        <xsd:attribute name="serviceProviderName" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[ The service serviceProviderName. ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+
+        <xsd:attribute name="version" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[ The service version. ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+
+        <xsd:attribute name="timeout" type="xsd:long" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[ The service invoke timeout. ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+
+        <xsd:attribute name="loadBalancerType" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[ The service invoke loadBalancerType. ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+
+        <xsd:attribute name="dispatchType" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[ The service invoke timeout. ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+
+        <xsd:attribute name="invokeType" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[ The service invoke timeout. ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+
+        <xsd:attribute name="serializerType" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[ The service invoke timeout. ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+
+        <xsd:attribute name="strategy" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[ The service invoke timeout. ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+
+        <xsd:attribute name="retries" type="xsd:string" use="optional">
+            <xsd:annotation>
+                <xsd:documentation><![CDATA[ The service invoke timeout. ]]></xsd:documentation>
+            </xsd:annotation>
+        </xsd:attribute>
+
     </xsd:complexType>
 
 

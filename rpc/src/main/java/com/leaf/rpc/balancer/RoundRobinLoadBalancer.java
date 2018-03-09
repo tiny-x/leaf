@@ -24,7 +24,7 @@ public class RoundRobinLoadBalancer implements LoadBalancer {
             return null;
         }
         ChannelGroup[] channelGroups = new ChannelGroup[list.size()];
-        channelGroups = list.toArray(channelGroups);
+        list.toArray(channelGroups);
 
         if (channelGroups.length == 1) {
             return channelGroups[0];

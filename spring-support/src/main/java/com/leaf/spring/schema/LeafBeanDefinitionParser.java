@@ -46,7 +46,25 @@ public class LeafBeanDefinitionParser implements BeanDefinitionParser {
 
         addPropertyReference(definition, element, "consumer", true);
         addProperty(definition, element, "interfaceClass", true);
-        addProperty(definition, element, "timeout", false);
+
+        NodeList childNodes = element.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node item = childNodes.item(i);
+            if (item instanceof Element) {
+                String localName = item.getLocalName();
+                if ("property".equals(localName)) {
+                    addProperty(definition, (Element) item, "group", false);
+                    addProperty(definition, (Element) item, "serviceProviderName", false);
+                    addProperty(definition, (Element) item, "version", false);
+                    addProperty(definition, element, "dispatchType", false);
+                    addProperty(definition, element, "serializerType", false);
+                    addProperty(definition, element, "loadBalancerType", false);
+                    addProperty(definition, element, "strategy", false);
+                    addProperty(definition, element, "retries", false);
+                    addProperty(definition, element, "invokeType", false);
+                }
+            }
+        }
 
         return registerBean(definition, element, parserContext);
     }
@@ -79,6 +97,19 @@ public class LeafBeanDefinitionParser implements BeanDefinitionParser {
         addPropertyReference(definition, element, "provider", true);
         addPropertyReference(definition, element, "ref", true);
 
+        NodeList childNodes = element.getChildNodes();
+        for (int i = 0; i < childNodes.getLength(); i++) {
+            Node item = childNodes.item(i);
+            if (item instanceof Element) {
+                String localName = item.getLocalName();
+                if ("property".equals(localName)) {
+                    addProperty(definition, (Element) item, "weight", false);
+                    addProperty(definition, (Element) item, "group", false);
+                    addProperty(definition, (Element) item, "serviceProviderName", false);
+                    addProperty(definition, (Element) item, "version", false);
+                }
+            }
+        }
         return registerBean(definition, element, parserContext);
     }
 

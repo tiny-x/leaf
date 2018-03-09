@@ -28,7 +28,9 @@ public class RandomLoadBalancer implements LoadBalancer {
         if (Collections.isEmpty(list)) {
             return null;
         }
-        ChannelGroup[] channelGroups = (ChannelGroup[]) list.toArray();
+        ChannelGroup[] channelGroups = new ChannelGroup[list.size()];
+        list.toArray(channelGroups);
+
         if (channelGroups.length == 1) {
             return channelGroups[0];
         }

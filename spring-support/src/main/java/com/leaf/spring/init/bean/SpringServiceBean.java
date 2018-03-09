@@ -1,6 +1,7 @@
 package com.leaf.spring.init.bean;
 
 import com.leaf.common.model.ServiceWrapper;
+import com.leaf.rpc.local.ServiceRegistry;
 import com.leaf.rpc.provider.Provider;
 import org.springframework.beans.factory.InitializingBean;
 
@@ -10,11 +11,17 @@ public class SpringServiceBean implements InitializingBean {
 
     private SpringProvider provider;
 
+    private int weight;
+
+    //----------------------
     private String group;
 
-    private Class<?> interfaceClass;
+    private String serviceProviderName;
 
     private String version;
+    // -----------------------
+
+    private Class<?> interfaceClass;
 
     private Object ref;
 
@@ -23,11 +30,19 @@ public class SpringServiceBean implements InitializingBean {
         checkNotNull(provider, "provider");
         Provider _provider = provider.getProvider();
 
-        ServiceWrapper serviceWrapper = _provider.serviceRegistry()
+        ServiceRegistry serviceRegistry = _provider.serviceRegistry()
                 .provider(ref)
                 .group(group)
                 .interfaceClass(interfaceClass)
-                .version(version)
+                .version(this.version);
+        if (serviceProviderName != null) {
+            serviceRegistry.providerName(serviceProviderName);
+        }
+        if (weight > 0) {
+            serviceRegistry.weight(weight);
+        }
+
+        ServiceWrapper serviceWrapper = serviceRegistry
                 .register();
         _provider.publishService(serviceWrapper);
     }
@@ -50,5 +65,13 @@ public class SpringServiceBean implements InitializingBean {
 
     public void setProvider(SpringProvider provider) {
         this.provider = provider;
+    }
+
+    public void setServiceProviderName(String serviceProviderName) {
+        this.serviceProviderName = serviceProviderName;
+    }
+
+    public void setWeight(int weight) {
+        this.weight = weight;
     }
 }

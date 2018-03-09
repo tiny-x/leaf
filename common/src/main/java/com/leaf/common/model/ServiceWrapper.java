@@ -17,7 +17,9 @@ public class ServiceWrapper {
     public ServiceWrapper(String group, String providerName, String version, Object serviceProvider, int weight) {
         this.serviceMeta = new ServiceMeta(group, providerName, version);
         this.serviceProvider = serviceProvider;
-        this.weight = weight;
+        if (weight > 0) {
+            this.weight = weight;
+        }
     }
 
     public ServiceMeta getServiceMeta() {

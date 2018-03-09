@@ -10,6 +10,14 @@
         <leaf:property registryServer="127.0.0.1:9876"/>
     </leaf:provider>
 
-    <leaf:service provider="provider" interfaceClass="com.leaf.example.spring.HelloService" ref="helloService"/>
+    <leaf:service id="helloServiceProvider" provider="provider" interfaceClass="com.leaf.example.spring.HelloService" ref="helloService">
+        <leaf:property weight="60"/>
+        <!-- default leaf -->
+        <leaf:property group="spring-demo"/>
+        <!-- default class.getName() -->
+        <leaf:property serviceProviderName="[test]com.leaf.example.spring.HelloService"/>
+        <!-- default 1.0.0 -->
+        <leaf:property version="1.1.0"/>
+    </leaf:service>
 
 </beans>
