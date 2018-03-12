@@ -1,4 +1,6 @@
-package com.leaf.common.model;
+package com.leaf.rpc.local;
+
+import com.leaf.common.model.ServiceMeta;
 
 public class ServiceWrapper {
 

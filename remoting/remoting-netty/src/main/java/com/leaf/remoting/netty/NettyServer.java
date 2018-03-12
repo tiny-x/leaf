@@ -116,11 +116,13 @@ public class NettyServer extends NettyServiceAbstract implements RemotingServer 
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
-                        socketChannel.pipeline().addLast(encoder);
-                        socketChannel.pipeline().addLast(new NettyDecoder());
-                        socketChannel.pipeline().addLast(nettyServerHandler);
-                        socketChannel.pipeline().addLast(new IdleStateHandler(0, 0, config.getIdleAllSeconds()));
-                        socketChannel.pipeline().addLast(nettyConnectManageHandler);
+                        socketChannel.pipeline().addLast(
+                                encoder,
+                                new NettyDecoder(),
+                                nettyServerHandler,
+                                new IdleStateHandler(0, 0, config.getIdleAllSeconds()),
+                                nettyConnectManageHandler
+                        );
                     }
                 });
         try {

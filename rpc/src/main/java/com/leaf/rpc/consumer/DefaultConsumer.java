@@ -2,7 +2,7 @@ package com.leaf.rpc.consumer;
 
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.model.Directory;
-import com.leaf.common.model.RegisterMeta;
+import com.leaf.register.api.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.common.utils.AnyThrow;
 import com.leaf.register.api.*;
@@ -16,20 +16,31 @@ import static com.google.common.base.Preconditions.checkNotNull;
 
 public class DefaultConsumer implements Consumer {
 
-    private String application;
+    private final String application;
 
-    private RemotingClient rpcClient;
+    private final RemotingClient rpcClient;
+
+    private final RegisterType registerType;
 
     private RegisterService registerService = null;
 
     public DefaultConsumer(String application) {
-       this(application, null);
+       this(application, new NettyClientConfig(), RegisterType.DEFAULT);
     }
 
     public DefaultConsumer(String application, NettyClientConfig nettyClientConfig) {
+        this(application, nettyClientConfig, RegisterType.DEFAULT);
+    }
+
+    public DefaultConsumer(String application, RegisterType registerType) {
+        this(application, new NettyClientConfig(), registerType);
+    }
+
+    public DefaultConsumer(String application, NettyClientConfig nettyClientConfig, RegisterType registerType) {
         checkNotNull(application, "application");
-        nettyClientConfig = nettyClientConfig == null ? new NettyClientConfig() : nettyClientConfig;
+
         this.application = application;
+        this.registerType = registerType;
         this.rpcClient = new NettyClient(nettyClientConfig);
         this.rpcClient.start();
     }
@@ -59,9 +70,9 @@ public class DefaultConsumer implements Consumer {
     }
 
     @Override
-    public void connectToRegistryServer(String addressess) {
-        registerService = RegisterFactory.registerService(RegisterType.DEFAULT);
-        registerService.connectToRegistryServer(addressess);
+    public void connectToRegistryServer(String addresses) {
+        registerService = RegisterFactory.registerService(registerType);
+        registerService.connectToRegistryServer(addresses);
     }
 
     @Override

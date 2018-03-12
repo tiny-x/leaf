@@ -1,6 +1,6 @@
 package com.leaf.spring.init.bean;
 
-import com.leaf.common.model.ServiceWrapper;
+import com.leaf.rpc.local.ServiceWrapper;
 import com.leaf.rpc.local.ServiceRegistry;
 import com.leaf.rpc.provider.Provider;
 import org.springframework.beans.factory.InitializingBean;

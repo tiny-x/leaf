@@ -1,6 +1,7 @@
-package com.leaf.common.model;
+package com.leaf.register.api.model;
 
 import com.leaf.common.UnresolvedAddress;
+import com.leaf.common.model.ServiceMeta;
 
 public class RegisterMeta {
 

@@ -1,6 +1,6 @@
 package com.leaf.rpc.consumer.cluster;
 
-import com.leaf.rpc.Request;
+import com.leaf.remoting.api.RequestWrapper;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.dispatcher.Dispatcher;
 import com.leaf.rpc.consumer.future.InvokeFuture;
@@ -29,12 +29,12 @@ public class FailOverClusterInvoker implements ClusterInvoker {
     }
 
     @Override
-    public <T> InvokeFuture<T> invoke(Request request, Class<T> returnType, InvokeType invokeType) throws Throwable {
+    public <T> InvokeFuture<T> invoke(RequestWrapper request, Class<T> returnType, InvokeType invokeType) throws Throwable {
        InvokeFuture<T> result = invoke0(request, returnType, invokeType, 0);
         return result;
     }
 
-    private <T> InvokeFuture<T> invoke0(Request request, Class<T> returnType, InvokeType invokeType, int tryCount) throws Throwable {
+    private <T> InvokeFuture<T> invoke0(RequestWrapper request, Class<T> returnType, InvokeType invokeType, int tryCount) throws Throwable {
         try {
             tryCount ++;
             return dispatcher.dispatch(request, returnType, invokeType);
@@ -42,8 +42,8 @@ public class FailOverClusterInvoker implements ClusterInvoker {
             if (tryCount <= retries) {
                 logger.warn("[FAILOVER] tryCount: {} directory: {}, method: {}",
                         tryCount,
-                        request.getRequestWrapper().getServiceMeta().directory(),
-                        request.getRequestWrapper().getMethodName(), e);
+                        request.getServiceMeta().directory(),
+                        request.getMethodName(), e);
                 return invoke0(request, returnType, invokeType, tryCount);
             } else {
                 throw e;

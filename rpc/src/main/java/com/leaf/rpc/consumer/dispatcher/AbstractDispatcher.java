@@ -1,14 +1,14 @@
 package com.leaf.rpc.consumer.dispatcher;
 
-import com.leaf.common.model.ResponseWrapper;
+import com.leaf.remoting.api.ResponseWrapper;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.remoting.api.InvokeCallback;
 import com.leaf.remoting.api.ResponseStatus;
 import com.leaf.remoting.api.channel.ChannelGroup;
 import com.leaf.remoting.api.exception.RemotingException;
 import com.leaf.remoting.api.future.ResponseFuture;
+import com.leaf.remoting.api.payload.RequestCommand;
 import com.leaf.remoting.api.payload.ResponseCommand;
-import com.leaf.rpc.Request;
 import com.leaf.rpc.balancer.LoadBalancer;
 import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.InvokeType;
@@ -86,24 +86,24 @@ public abstract class AbstractDispatcher implements Dispatcher {
         return serializerType.value();
     }
 
-    protected <T> InvokeFuture<T> invoke(final Request request,
-                                        final DispatchType dispatchType,
-                                        Class<T> returnType,
-                                        InvokeType invokeType,
-                                        ChannelGroup... channelGroup) throws Throwable {
+    protected <T> InvokeFuture<T> invoke(final RequestCommand requestCommand,
+                                         final DispatchType dispatchType,
+                                         Class<T> returnType,
+                                         InvokeType invokeType,
+                                         ChannelGroup... channelGroup) throws Throwable {
 
         switch (invokeType) {
             case SYNC: {
                 if (dispatchType == DispatchType.BROADCAST) {
                     throw new UnsupportedOperationException("syncInvoke Unsupported broadcast dispatch!");
                 }
-                return invokeSync(request, returnType, channelGroup[0]);
+                return invokeSync(requestCommand, returnType, channelGroup[0]);
             }
             case ASYNC: {
-                return invokeAsync(request, dispatchType, returnType, channelGroup);
+                return invokeAsync(requestCommand, dispatchType, returnType, channelGroup);
             }
             case ONE_WAY: {
-                invokeOneWay(request, dispatchType, channelGroup);
+                invokeOneWay(requestCommand, dispatchType, channelGroup);
                 return null;
             }
             default: {
@@ -114,12 +114,12 @@ public abstract class AbstractDispatcher implements Dispatcher {
 
     }
 
-    private <T> InvokeFuture<T> invokeSync(Request request,  Class<T> returnType, ChannelGroup channelGroup) throws Throwable {
+    private <T> InvokeFuture<T> invokeSync(RequestCommand requestCommand, Class<T> returnType, ChannelGroup channelGroup) throws Throwable {
         InvokeFuture<T> invokeFuture = new DefaultInvokeFuture<>(returnType, timeoutMillis);
         ResponseCommand responseCommand = consumer
                 .client()
                 .invokeSync(channelGroup.remoteAddress(),
-                        request.getRequestCommand(),
+                        requestCommand,
                         timeoutMillis);
 
         ResponseWrapper responseWrapper = getSerializer().deserialize(responseCommand.getBody(), ResponseWrapper.class);
@@ -133,14 +133,14 @@ public abstract class AbstractDispatcher implements Dispatcher {
         }
     }
 
-    private <T> InvokeFuture<T> invokeAsync(Request request, DispatchType dispatchType,  Class<T> returnType, ChannelGroup... channelGroup) throws Throwable {
+    private <T> InvokeFuture<T> invokeAsync(RequestCommand requestCommand, DispatchType dispatchType, Class<T> returnType, ChannelGroup... channelGroup) throws Throwable {
         InvokeFuture<T> invokeFuture = null;
         switch (dispatchType) {
             case ROUND: {
                 invokeFuture = new DefaultInvokeFuture<T>(returnType, timeoutMillis);
                 consumer.client().invokeAsync(
                         channelGroup[0].remoteAddress(),
-                        request.getRequestCommand(),
+                        requestCommand,
                         timeoutMillis,
                         new InvokeAsyncCallback(invokeFuture));
                 return invokeFuture;
@@ -152,7 +152,7 @@ public abstract class AbstractDispatcher implements Dispatcher {
                     futures[i] = new DefaultInvokeFuture<T>(returnType, timeoutMillis);
                     consumer.client().invokeAsync(
                             channelGroup[i].remoteAddress(),
-                            request.getRequestCommand().clone(),
+                            requestCommand.clone(),
                             timeoutMillis,
                             new InvokeAsyncCallback(futures[i]));
                 }
@@ -167,18 +167,18 @@ public abstract class AbstractDispatcher implements Dispatcher {
 
     }
 
-    private void invokeOneWay(Request request, DispatchType dispatchType, ChannelGroup... channelGroup) throws Throwable {
+    private void invokeOneWay(RequestCommand requestCommand, DispatchType dispatchType, ChannelGroup... channelGroup) throws Throwable {
         switch (dispatchType) {
             case ROUND: {
                 consumer.client().invokeOneWay(channelGroup[0].remoteAddress(),
-                        request.getRequestCommand(),
+                        requestCommand,
                         timeoutMillis);
                 break;
             }
             case BROADCAST: {
                 for (int i = 0; i < channelGroup.length; i++) {
                     consumer.client().invokeOneWay(channelGroup[i].remoteAddress(),
-                            request.getRequestCommand().clone(),
+                            requestCommand.clone(),
                             timeoutMillis);
                 }
             }

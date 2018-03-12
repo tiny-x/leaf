@@ -2,7 +2,7 @@ package com.leaf.rpc.consumer;
 
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.model.Directory;
-import com.leaf.common.model.RegisterMeta;
+import com.leaf.register.api.model.RegisterMeta;
 import com.leaf.register.api.NotifyListener;
 import com.leaf.register.api.OfflineListener;
 import com.leaf.register.api.RegisterService;
@@ -30,9 +30,9 @@ public interface Consumer {
 
     /**
      * 连接到注册中心
-     * @param addressess
+     * @param addresses
      */
-    void connectToRegistryServer(String addressess);
+    void connectToRegistryServer(String addresses);
 
     /**
      * 从注册中心订阅一个服务.

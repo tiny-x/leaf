@@ -2,11 +2,7 @@ package com.leaf.rpc.exector;
 
 import java.util.concurrent.*;
 
-/**
- * @author yefei
- * @date 2018-02-26 9:55
- */
-public class ThreadPoolExectorFactory implements ExectorFactory {
+public class ThreadPoolExecutorFactory implements ExecutorFactory {
 
     private static final int AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
 

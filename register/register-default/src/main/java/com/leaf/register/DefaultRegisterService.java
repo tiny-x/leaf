@@ -1,7 +1,7 @@
 package com.leaf.register;
 
 import com.leaf.common.UnresolvedAddress;
-import com.leaf.common.model.RegisterMeta;
+import com.leaf.register.api.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.common.utils.InetUtils;
 import com.leaf.register.api.AbstractRegisterService;

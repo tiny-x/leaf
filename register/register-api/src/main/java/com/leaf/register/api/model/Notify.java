@@ -1,7 +1,6 @@
 package com.leaf.register.api.model;
 
 import com.leaf.common.UnresolvedAddress;
-import com.leaf.common.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.register.api.NotifyEvent;
 

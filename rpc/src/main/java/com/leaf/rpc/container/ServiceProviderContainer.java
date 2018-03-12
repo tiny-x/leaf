@@ -1,7 +1,7 @@
 package com.leaf.rpc.container;
 
 
-import com.leaf.common.model.ServiceWrapper;
+import com.leaf.rpc.local.ServiceWrapper;
 
 import java.util.List;
 

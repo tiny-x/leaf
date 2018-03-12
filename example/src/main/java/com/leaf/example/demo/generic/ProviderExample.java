@@ -1,6 +1,6 @@
 package com.leaf.example.demo.generic;
 
-import com.leaf.common.model.ServiceWrapper;
+import com.leaf.rpc.local.ServiceWrapper;
 import com.leaf.remoting.netty.NettyServerConfig;
 import com.leaf.rpc.provider.DefaultProvider;
 import com.leaf.rpc.provider.Provider;

@@ -1,9 +1,15 @@
-package com.leaf.common.model;
+package com.leaf.remoting.api;
+
+import com.leaf.common.model.ServiceMeta;
+
+import java.io.Serializable;
 
 /**
- * 请求 包装
+ * 请求 包装, 用与序列化
  */
-public class RequestWrapper {
+public class RequestWrapper implements Serializable {
+
+    private static final long serialVersionUID = -1126932930252953428L;
 
     private String application;
 

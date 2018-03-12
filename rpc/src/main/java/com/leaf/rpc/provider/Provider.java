@@ -1,7 +1,7 @@
 package com.leaf.rpc.provider;
 
 import com.leaf.common.model.Directory;
-import com.leaf.common.model.ServiceWrapper;
+import com.leaf.rpc.local.ServiceWrapper;
 import com.leaf.rpc.controller.FlowController;
 import com.leaf.rpc.local.ServiceRegistry;
 
@@ -30,9 +30,9 @@ public interface Provider {
     /**
      * 连接注册中心
      *
-     * @param addressess
+     * @param addresses
      */
-    void connectToRegistryServer(String addressess);
+    void connectToRegistryServer(String addresses);
 
     /**
      * 发布服务到注册中心

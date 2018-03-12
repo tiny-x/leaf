@@ -1,6 +1,13 @@
-package com.leaf.common.model;
+package com.leaf.remoting.api;
 
-public class ResponseWrapper {
+import java.io.Serializable;
+
+/**
+ * 响应包装，序列化后生产的对象
+ */
+public class ResponseWrapper implements Serializable {
+
+    private static final long serialVersionUID = -1126932930252953428L;
 
     private Object result;
 

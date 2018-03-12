@@ -2,7 +2,7 @@ package com.leaf.rpc.container;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import com.leaf.common.model.ServiceWrapper;
+import com.leaf.rpc.local.ServiceWrapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

@@ -2,7 +2,7 @@ package com.leaf.register.api;
 
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.concurrent.ConcurrentSet;
-import com.leaf.common.model.RegisterMeta;
+import com.leaf.register.api.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.common.utils.Collections;
 import org.slf4j.Logger;
@@ -29,12 +29,12 @@ public abstract class AbstractRegisterService implements RegisterService {
     /**
      * 已经注册的服务(断线重连是重连注册服务)
      */
-    protected final ConcurrentSet<RegisterMeta> providerRegisterMetas = new ConcurrentSet<>();
+    private final ConcurrentSet<RegisterMeta> providerRegisterMetas = new ConcurrentSet<>();
 
     /**
      * 已经订阅的服务
      */
-    protected final ConcurrentSet<ServiceMeta> consumersServiceMeta = new ConcurrentSet<>();
+    private final ConcurrentSet<ServiceMeta> consumersServiceMeta = new ConcurrentSet<>();
 
 
     @Override
@@ -47,7 +47,7 @@ public abstract class AbstractRegisterService implements RegisterService {
     @Override
     public void unRegister(RegisterMeta registerMeta) {
         logger.info("[UN_REGISTER] unRegister service: {}", registerMeta);
-        consumersServiceMeta.remove(registerMeta);
+        providerRegisterMetas.remove(registerMeta);
         doUnRegister(registerMeta);
     }
 
@@ -104,7 +104,7 @@ public abstract class AbstractRegisterService implements RegisterService {
         return providerRegisterMetas;
     }
 
-    public ConcurrentSet<ServiceMeta> getConsumersServiceMeta() {
+    public ConcurrentSet<ServiceMeta> getConsumersServiceMetas() {
         return consumersServiceMeta;
     }
 

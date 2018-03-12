@@ -4,14 +4,13 @@ import com.leaf.common.ProtocolHead;
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.concurrent.ConcurrentSet;
 import com.leaf.common.constants.Constants;
-import com.leaf.common.model.RegisterMeta;
+import com.leaf.register.api.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.common.utils.Collections;
 import com.leaf.common.utils.Maps;
 import com.leaf.register.DefaultRegisterServer;
 import com.leaf.register.api.NotifyEvent;
 import com.leaf.register.api.model.Notify;
-import com.leaf.register.api.model.RegisterMetas;
 import com.leaf.remoting.api.ChannelEventAdapter;
 import com.leaf.remoting.api.InvokeCallback;
 import com.leaf.remoting.api.RemotingCommandFactory;
@@ -127,14 +126,11 @@ public class RegisterProcess implements RequestProcessor {
         ConcurrentSet<RegisterMeta> registerMetas = PROVIDER_MAP.get(serviceName);
         List<RegisterMeta> registerMetasList = new ArrayList<>(registerMetas);
 
-        RegisterMetas result = new RegisterMetas();
-        result.setRegisterMetas(registerMetasList);
-
         // 返回给客户端已经注册的服务
         ResponseCommand responseCommand = RemotingCommandFactory.createResponseCommand(
                 ProtocolHead.ACK,
                 request.getSerializerCode(),
-                serializer.serialize(result),
+                serializer.serialize(null),
                 request.getInvokeId()
         );
         return responseCommand;
@@ -262,7 +258,7 @@ public class RegisterProcess implements RequestProcessor {
         while (iterator.hasNext()) {
             Channel next = iterator.next();
             if (channelIsSubscribeService(next, registerMeta.getServiceMeta())) {
-                sendMessageToSubscribe(requestCommand, next);
+                sendMessageToSubscriber(requestCommand, next);
             }
         }
     }
@@ -314,7 +310,7 @@ public class RegisterProcess implements RequestProcessor {
         subscriberChannels.add(channel);
     }
 
-    private void sendMessageToSubscribe(RequestCommand requestCommand, Channel channel) {
+    private void sendMessageToSubscriber(RequestCommand requestCommand, Channel channel) {
         RegisterServerInvokeCallback registerServerInvokeCallback = new RegisterServerInvokeCallback();
         try {
             defaultRegisterServer.getRpcServer().invokeAsync(
@@ -361,7 +357,7 @@ public class RegisterProcess implements RequestProcessor {
                 Iterator<Channel> iterator = subscriberChannels.iterator();
                 while (iterator.hasNext()) {
                     Channel next = iterator.next();
-                    sendMessageToSubscribe(requestCommand, next);
+                    sendMessageToSubscriber(requestCommand, next);
                 }
             }
         }

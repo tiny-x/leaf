@@ -1,6 +1,6 @@
 package com.leaf.example.flow;
 
-import com.leaf.common.model.ServiceWrapper;
+import com.leaf.rpc.local.ServiceWrapper;
 import com.leaf.remoting.netty.NettyServerConfig;
 import com.leaf.rpc.controller.FlowController;
 import com.leaf.rpc.provider.DefaultProvider;

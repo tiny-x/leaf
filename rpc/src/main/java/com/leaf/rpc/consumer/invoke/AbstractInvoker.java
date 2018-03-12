@@ -1,9 +1,8 @@
 package com.leaf.rpc.consumer.invoke;
 
-import com.leaf.common.model.RequestWrapper;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.common.utils.Reflects;
-import com.leaf.rpc.Request;
+import com.leaf.remoting.api.RequestWrapper;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.StrategyConfig;
 import com.leaf.rpc.consumer.cluster.ClusterInvoker;
@@ -46,11 +45,8 @@ public abstract class AbstractInvoker {
         requestWrapper.setArgs(args);
         requestWrapper.setServiceMeta(serviceMeta);
 
-        Request request = new Request();
-        request.setRequestWrapper(requestWrapper);
-
         ClusterInvoker clusterInvoker = createClusterInvoker(dispatcher, strategyConfig);
-        InvokeFuture<T> invokeFuture = clusterInvoker.invoke(request, returnType, invokeType);
+        InvokeFuture<T> invokeFuture = clusterInvoker.invoke(requestWrapper, returnType, invokeType);
         if (invokeType == InvokeType.SYNC) {
             return invokeFuture.get();
         } else {

@@ -1,6 +1,6 @@
 package com.leaf.example.cluster;
 
-import com.leaf.common.model.ServiceWrapper;
+import com.leaf.rpc.local.ServiceWrapper;
 import com.leaf.example.cluster.api.ClusterService;
 import com.leaf.example.cluster.api.FailServiceImpl;
 import com.leaf.rpc.provider.DefaultProvider;

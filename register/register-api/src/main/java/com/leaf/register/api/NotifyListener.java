@@ -1,7 +1,7 @@
 package com.leaf.register.api;
 
 
-import com.leaf.common.model.RegisterMeta;
+import com.leaf.register.api.model.RegisterMeta;
 
 public interface NotifyListener {
 

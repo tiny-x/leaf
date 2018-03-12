@@ -1,5 +1,7 @@
 package com.leaf.remoting.netty;
 
+import com.leaf.common.constants.Constants;
+
 public class NettyServerConfig {
 
     private int serverOnewaySemaphoreValue = 256;
@@ -12,7 +14,7 @@ public class NettyServerConfig {
     private int serverSocketSndBufSize = NettySystemConfig.socketSndbufSize;
     private int serverSocketRcvBufSize = NettySystemConfig.socketRcvbufSize;
 
-    private int port = 9180;
+    private int port = Constants.DEFAULT_PROVIDER_PORT;
 
     private long invokeTimeoutMillis = 3000L;
 

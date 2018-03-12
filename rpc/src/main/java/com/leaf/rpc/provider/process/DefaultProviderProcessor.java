@@ -1,9 +1,9 @@
 package com.leaf.rpc.provider.process;
 
 import com.leaf.common.ProtocolHead;
-import com.leaf.common.model.RequestWrapper;
-import com.leaf.common.model.ResponseWrapper;
-import com.leaf.common.model.ServiceWrapper;
+import com.leaf.remoting.api.RequestWrapper;
+import com.leaf.remoting.api.ResponseWrapper;
+import com.leaf.rpc.local.ServiceWrapper;
 import com.leaf.common.utils.Reflects;
 import com.leaf.remoting.api.RemotingCommandFactory;
 import com.leaf.remoting.api.RequestProcessor;

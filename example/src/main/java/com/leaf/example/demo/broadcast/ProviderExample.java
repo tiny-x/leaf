@@ -1,6 +1,6 @@
 package com.leaf.example.demo.broadcast;
 
-import com.leaf.common.model.ServiceWrapper;
+import com.leaf.rpc.local.ServiceWrapper;
 import com.leaf.example.demo.HelloService;
 import com.leaf.example.demo.HelloServiceImpl;
 import com.leaf.rpc.provider.DefaultProvider;

@@ -1,9 +1,10 @@
 package com.leaf.rpc.provider;
 
 import com.leaf.common.UnresolvedAddress;
+import com.leaf.common.constants.Constants;
 import com.leaf.common.model.Directory;
-import com.leaf.common.model.RegisterMeta;
-import com.leaf.common.model.ServiceWrapper;
+import com.leaf.register.api.model.RegisterMeta;
+import com.leaf.rpc.local.ServiceWrapper;
 import com.leaf.common.utils.InetUtils;
 import com.leaf.register.api.RegisterFactory;
 import com.leaf.register.api.RegisterService;
@@ -14,52 +15,68 @@ import com.leaf.remoting.netty.NettyServerConfig;
 import com.leaf.rpc.container.DefaultServiceProviderContainer;
 import com.leaf.rpc.container.ServiceProviderContainer;
 import com.leaf.rpc.controller.FlowController;
-import com.leaf.rpc.exector.ExectorFactory;
-import com.leaf.rpc.exector.ThreadPoolExectorFactory;
+import com.leaf.rpc.exector.ExecutorFactory;
+import com.leaf.rpc.exector.ThreadPoolExecutorFactory;
 import com.leaf.rpc.local.DefaultServiceRegistry;
 import com.leaf.rpc.local.ServiceRegistry;
 import com.leaf.rpc.provider.process.DefaultProviderProcessor;
 
 public class DefaultProvider implements Provider {
 
-    private RemotingServer server;
+    private final RemotingServer server;
 
-    private ServiceProviderContainer serviceProviderContainer;
+    private final ServiceProviderContainer serviceProviderContainer;
+
+    private final NettyServerConfig config;
+
+    private final ExecutorFactory executorFactory = new ThreadPoolExecutorFactory();
+
+    private final RegisterType registerType;
 
     private RegisterService registerService = null;
 
     private FlowController[] flowControllers;
 
-    private NettyServerConfig config;
-
-    private ExectorFactory exectorFactory = new ThreadPoolExectorFactory();
-
+    public DefaultProvider() {
+        this(Constants.DEFAULT_PROVIDER_PORT);
+    }
 
     public DefaultProvider(int port) {
-        this(port, null);
+        this(port, new NettyServerConfig());
     }
 
     public DefaultProvider(NettyServerConfig nettyServerConfig) {
-        this(0, nettyServerConfig);
+        this(Constants.DEFAULT_PROVIDER_PORT, nettyServerConfig);
     }
 
     public DefaultProvider(int port, NettyServerConfig nettyServerConfig) {
-        this.config = nettyServerConfig == null ? new NettyServerConfig() : nettyServerConfig;
-        this.config.setPort(port == 0 ? this.config.getPort() : port);
-        this.serviceProviderContainer = new DefaultServiceProviderContainer();
-        this.server = new NettyServer(config);
+        this(port, nettyServerConfig, RegisterType.DEFAULT);
     }
-    
-    @Override
-    public void start() {
-        this.server.start();
-        this.server.registerRequestProcess(new DefaultProviderProcessor(this), exectorFactory.createExecutorService());
+
+    public DefaultProvider(int port, RegisterType registerType) {
+        this(port, new NettyServerConfig(), registerType);
+    }
+
+    public DefaultProvider(int port, NettyServerConfig nettyServerConfig, RegisterType registerType) {
+        this.config = nettyServerConfig;
+        this.registerType = registerType;
+
+        this.server = new NettyServer(config);
+        this.serviceProviderContainer = new DefaultServiceProviderContainer();
+        this.config.setPort(port);
+
     }
 
     @Override
-    public void connectToRegistryServer(String addressess) {
-        registerService = RegisterFactory.registerService(RegisterType.DEFAULT);
-        registerService.connectToRegistryServer(addressess);
+    public void start() {
+        this.server.start();
+        this.server.registerRequestProcess(new DefaultProviderProcessor(this), executorFactory.createExecutorService());
+    }
+
+    @Override
+    public void connectToRegistryServer(String addresses) {
+        registerService = RegisterFactory.registerService(registerType);
+        registerService.connectToRegistryServer(addresses);
     }
 
     @Override

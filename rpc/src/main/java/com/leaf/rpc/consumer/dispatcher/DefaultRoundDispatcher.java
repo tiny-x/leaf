@@ -1,10 +1,9 @@
 package com.leaf.rpc.consumer.dispatcher;
 
 import com.leaf.common.ProtocolHead;
-import com.leaf.common.model.RequestWrapper;
+import com.leaf.remoting.api.RequestWrapper;
 import com.leaf.remoting.api.channel.ChannelGroup;
 import com.leaf.remoting.api.payload.RequestCommand;
-import com.leaf.rpc.Request;
 import com.leaf.rpc.balancer.LoadBalancer;
 import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.InvokeType;
@@ -20,9 +19,9 @@ public class DefaultRoundDispatcher extends AbstractDispatcher {
     }
 
     @Override
-    public <T> InvokeFuture<T> dispatch(Request request, Class<T> returnType, InvokeType invokeType) throws Throwable {
+    public <T> InvokeFuture<T> dispatch(RequestWrapper request, Class<T> returnType, InvokeType invokeType) throws Throwable {
 
-        final RequestWrapper requestWrapper = request.getRequestWrapper();
+        final RequestWrapper requestWrapper = request;
 
         // 通过软负载均衡选择一个channel
         ChannelGroup channelGroup = select(requestWrapper.getServiceMeta());
@@ -30,9 +29,8 @@ public class DefaultRoundDispatcher extends AbstractDispatcher {
 
         byte[] bytes = serializer.serialize(requestWrapper);
         RequestCommand requestCommand = new RequestCommand(ProtocolHead.REQUEST, getSerializerCode(), bytes);
-        request.setRequestCommand(requestCommand);
 
-        InvokeFuture<T> invoke = invoke(request, DispatchType.ROUND, returnType, invokeType, channelGroup);
+        InvokeFuture<T> invoke = invoke(requestCommand, DispatchType.ROUND, returnType, invokeType, channelGroup);
 
         return invoke;
     }

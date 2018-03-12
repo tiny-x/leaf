@@ -1,6 +1,9 @@
-package com.leaf.example.register;
+package com.leaf.example.zookeeper;
 
 import com.leaf.rpc.local.ServiceWrapper;
+import com.leaf.example.register.HelloService;
+import com.leaf.example.register.HelloServiceImpl;
+import com.leaf.register.api.RegisterType;
 import com.leaf.rpc.provider.DefaultProvider;
 import com.leaf.rpc.provider.Provider;
 
@@ -13,9 +16,9 @@ public class ProviderExample {
         HelloService helloService = new HelloServiceImpl();
 
         Provider[] providers = new DefaultProvider[]{
-                new DefaultProvider(9180),
-                new DefaultProvider(9181),
-                new DefaultProvider(9182)
+                new DefaultProvider(9180, RegisterType.ZOOKEEPER),
+                new DefaultProvider(9181, RegisterType.ZOOKEEPER),
+                new DefaultProvider(9182, RegisterType.ZOOKEEPER)
         };
 
         CountDownLatch countDownLatch = new CountDownLatch(providers.length);
@@ -29,7 +32,7 @@ public class ProviderExample {
                     ServiceWrapper serviceWrapper = provider.serviceRegistry()
                             .provider(helloService)
                             .register();
-                    provider.connectToRegistryServer("127.0.0.1:9876");
+                    provider.connectToRegistryServer("127.0.0.1:2181");
                     provider.publishService(serviceWrapper);
                 }
             }).start();

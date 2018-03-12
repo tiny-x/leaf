@@ -1,6 +1,6 @@
 package com.leaf.rpc.consumer.cluster;
 
-import com.leaf.rpc.Request;
+import com.leaf.remoting.api.RequestWrapper;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.future.InvokeFuture;
 
@@ -30,5 +30,5 @@ public interface ClusterInvoker {
 
     Strategy strategy();
 
-    <T> InvokeFuture<T> invoke(Request request, Class<T> returnType, InvokeType invokeType) throws Throwable;
+    <T> InvokeFuture<T> invoke(RequestWrapper request, Class<T> returnType, InvokeType invokeType) throws Throwable;
 }

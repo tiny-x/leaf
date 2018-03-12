@@ -4,7 +4,7 @@ import com.leaf.common.ProtocolHead;
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.concurrent.ConcurrentSet;
 import com.leaf.common.constants.Constants;
-import com.leaf.common.model.RegisterMeta;
+import com.leaf.register.api.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.common.utils.AnyThrow;
 import com.leaf.common.utils.Collections;
@@ -204,7 +204,7 @@ public class DefaultRegisterClient {
                     register(registerMeta);
                 }
             }
-            ConcurrentSet<ServiceMeta> consumers = registerService.getConsumersServiceMeta();
+            ConcurrentSet<ServiceMeta> consumers = registerService.getConsumersServiceMetas();
             if (Collections.isEmpty(consumers)) {
                 for (ServiceMeta serviceMeta : consumers) {
                     subscribe(serviceMeta);

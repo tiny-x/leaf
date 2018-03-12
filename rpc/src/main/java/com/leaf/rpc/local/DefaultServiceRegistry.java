@@ -3,7 +3,6 @@ package com.leaf.rpc.local;
 import com.leaf.common.annotation.ServiceInterface;
 import com.leaf.common.annotation.ServiceProvider;
 import com.leaf.common.constants.Constants;
-import com.leaf.common.model.ServiceWrapper;
 import com.leaf.rpc.container.ServiceProviderContainer;
 
 import static com.google.common.base.Preconditions.checkArgument;

@@ -2,7 +2,7 @@ package com.leaf.register.api;
 
 
 import com.leaf.common.UnresolvedAddress;
-import com.leaf.common.model.RegisterMeta;
+import com.leaf.register.api.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
 
 import java.util.List;

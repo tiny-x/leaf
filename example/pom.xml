@@ -29,6 +29,11 @@
 
         <dependency>
             <groupId>com.leaf-rpc</groupId>
+            <artifactId>register-zookeeper</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.leaf-rpc</groupId>
             <artifactId>serialization-protostuff</artifactId>
         </dependency>
 

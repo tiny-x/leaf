@@ -1,7 +1,5 @@
 package com.leaf.rpc.local;
 
-import com.leaf.common.model.ServiceWrapper;
-
 /**
  * 本地服务注册.
  */

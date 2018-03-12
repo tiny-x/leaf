@@ -4,7 +4,7 @@ import com.google.common.base.Strings;
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.constants.Constants;
 import com.leaf.common.model.Directory;
-import com.leaf.common.model.RegisterMeta;
+import com.leaf.register.api.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.register.api.NotifyEvent;
 import com.leaf.register.api.NotifyListener;
