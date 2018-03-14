@@ -342,7 +342,7 @@ public abstract class NettyServiceAbstract {
                     ChannelEvent event = this.eventQueue.poll(3000, TimeUnit.MILLISECONDS);
                     if (event != null && listener != null) {
                         switch (event.getType()) {
-                            case IDLE:
+                            case ALL_IDLE:
                                 listener.onChannelIdle(event.getRemoteAddr(), event.getChannel());
                                 break;
                             case CLOSE:

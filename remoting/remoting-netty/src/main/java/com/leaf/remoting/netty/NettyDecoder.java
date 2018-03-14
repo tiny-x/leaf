@@ -12,11 +12,11 @@ import java.util.List;
 
 public class NettyDecoder extends ReplayingDecoder<NettyDecoder.State> {
 
+    private final ProtocolHead head = new ProtocolHead();
+
     public NettyDecoder() {
         super(State.HEADER_MAGIC);
     }
-
-    private final ProtocolHead head = new ProtocolHead();
 
     @Override
     protected void decode(ChannelHandlerContext ctx, ByteBuf in, List<Object> out) throws Exception {
@@ -37,30 +37,32 @@ public class NettyDecoder extends ReplayingDecoder<NettyDecoder.State> {
                 head.setBodyLength(in.readInt());
                 checkpoint(State.BODY);
             case BODY:
-                boolean isRequest = ((head.getMessageCode() % 2) == 1);
-                if (isRequest) {
-                    byte[] body = new byte[head.getBodyLength()];
-                    in.readBytes(body);
-                    RequestCommand requestCommand = RemotingCommandFactory.createRequestCommand(
-                            head.getMessageCode(),
-                            head.getSerializerCode(),
-                            body,
-                            head.getInvokeId()
-                    );
+                if (head.getMessageCode() != ProtocolHead.HEARTBEAT) {
+                    boolean isRequest = ((head.getMessageCode() % 2) == 1);
+                    if (isRequest) {
+                        byte[] body = new byte[head.getBodyLength()];
+                        in.readBytes(body);
+                        RequestCommand requestCommand = RemotingCommandFactory.createRequestCommand(
+                                head.getMessageCode(),
+                                head.getSerializerCode(),
+                                body,
+                                head.getInvokeId()
+                        );
 
-                    out.add(requestCommand);
-                } else {
-                    byte[] body = new byte[head.getBodyLength()];
-                    in.readBytes(body);
-                    ResponseCommand responseCommand = RemotingCommandFactory.createResponseCommand(
-                            head.getMessageCode(),
-                            head.getSerializerCode(),
-                            body,
-                            head.getInvokeId()
-                    );
+                        out.add(requestCommand);
+                    } else {
+                        byte[] body = new byte[head.getBodyLength()];
+                        in.readBytes(body);
+                        ResponseCommand responseCommand = RemotingCommandFactory.createResponseCommand(
+                                head.getMessageCode(),
+                                head.getSerializerCode(),
+                                body,
+                                head.getInvokeId()
+                        );
 
-                    responseCommand.setStatus(head.getStatus());
-                    out.add(responseCommand);
+                        responseCommand.setStatus(head.getStatus());
+                        out.add(responseCommand);
+                    }
                 }
                 checkpoint(State.HEADER_MAGIC);
         }

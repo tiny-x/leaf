@@ -10,7 +10,7 @@ import com.leaf.common.utils.Collections;
 import com.leaf.common.utils.Maps;
 import com.leaf.register.DefaultRegisterServer;
 import com.leaf.register.api.NotifyEvent;
-import com.leaf.register.api.model.Notify;
+import com.leaf.register.api.model.Message;
 import com.leaf.register.api.model.SubscribeMeta;
 import com.leaf.remoting.api.ChannelEventAdapter;
 import com.leaf.remoting.api.InvokeCallback;
@@ -33,10 +33,7 @@ import io.netty.util.internal.SystemPropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.TimerTask;
+import java.util.*;
 import java.util.concurrent.*;
 
 import static com.leaf.common.ProtocolHead.*;
@@ -159,17 +156,18 @@ public class RegisterProcess implements RequestProcessor {
         consumers.add(subscribeMeta);
 
         ConcurrentSet<RegisterMeta> providers = PROVIDER_MAP.get(serviceProviderName);
-        Notify notify = new Notify(
+        RegisterMeta[] registerMetas = new RegisterMeta[providers.size()];
+        Message message = new Message(
                 NotifyEvent.ADD,
                 subscribeMeta.getServiceMeta(),
-                new ArrayList<>(providers)
+                providers.toArray(registerMetas)
         );
 
         // 返回给客户端已经注册的服务
         ResponseCommand responseCommand = RemotingCommandFactory.createResponseCommand(
                 ProtocolHead.SUBSCRIBE_RECEIVE,
                 request.getSerializerCode(),
-                serializer.serialize(notify),
+                serializer.serialize(message),
                 request.getInvokeId()
         );
 
@@ -241,18 +239,17 @@ public class RegisterProcess implements RequestProcessor {
 
 
     private void notifySubscribe(Serializer serializer, RegisterMeta registerMeta, NotifyEvent notifyEvent) {
-        ArrayList<RegisterMeta> registerMetas = new ArrayList<>(1);
-        registerMetas.add(registerMeta);
-        Notify notify = new Notify(
+
+        Message message = new Message(
                 notifyEvent,
                 registerMeta.getServiceMeta(),
-                registerMetas
+                registerMeta
         );
 
         RequestCommand requestCommand = RemotingCommandFactory.createRequestCommand(
                 SUBSCRIBE_SERVICE,
                 serializerType.value(),
-                serializer.serialize(notify)
+                serializer.serialize(message)
         );
 
         Iterator<Channel> iterator = subscriberChannels.iterator();
@@ -347,12 +344,12 @@ public class RegisterProcess implements RequestProcessor {
                 }
 
                 // 通知订阅下线服务
-                Notify notify = new Notify(address);
+                Message message = new Message(address);
                 Serializer serializer = SerializerFactory.serializer(serializerType);
                 RequestCommand requestCommand = RemotingCommandFactory.createRequestCommand(
                         OFFLINE_SERVICE,
                         serializerType.value(),
-                        serializer.serialize(notify)
+                        serializer.serialize(message)
                 );
 
                 Iterator<Channel> iterator = subscriberChannels.iterator();

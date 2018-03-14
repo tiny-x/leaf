@@ -3,7 +3,6 @@ package com.leaf.register.api;
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.concurrent.ConcurrentSet;
 import com.leaf.common.model.ServiceMeta;
-import com.leaf.common.utils.Collections;
 import com.leaf.register.api.model.RegisterMeta;
 import com.leaf.register.api.model.SubscribeMeta;
 import org.slf4j.Logger;
@@ -83,13 +82,13 @@ public abstract class AbstractRegisterService extends AbstractRetryRegisterServi
         }
     }
 
-    public void notify(ServiceMeta serviceMeta, NotifyEvent event, List<RegisterMeta> registerMetas) {
+    public void notify(ServiceMeta serviceMeta, NotifyEvent event, RegisterMeta... registerMetas) {
         logger.info("[NOTIFY] consumer service: {} notifyEvent：{}, registerMetas: {}",
                 serviceMeta,
                 event.name(),
                 registerMetas);
 
-        if (Collections.isNotEmpty(registerMetas)) {
+        if (registerMetas != null && registerMetas.length > 0) {
             NotifyListener notifyListener = subscribeListeners.get(serviceMeta);
             for (RegisterMeta registerMeta : registerMetas) {
                 notifyListener.notify(registerMeta, event);

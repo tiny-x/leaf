@@ -10,6 +10,7 @@ public class NettyClientConfig {
     private int clientSocketRcvBufSize = NettySystemConfig.socketRcvbufSize;
 
     private int idleAllSeconds = NettySystemConfig.IO_IDLE_ALL_TIME_SECONDS;
+    private int idleWriteSeconds = NettySystemConfig.IO_IDLE_WRITE_TIME_SECONDS;
 
     private long connectTimeoutMillis = Constants.DEFAULT_CONNECT_TIMEOUT;
 
@@ -69,5 +70,13 @@ public class NettyClientConfig {
 
     public void setClientSocketRcvBufSize(int clientSocketRcvBufSize) {
         this.clientSocketRcvBufSize = clientSocketRcvBufSize;
+    }
+
+    public int getIdleWriteSeconds() {
+        return idleWriteSeconds;
+    }
+
+    public void setIdleWriteSeconds(int idleWriteSeconds) {
+        this.idleWriteSeconds = idleWriteSeconds;
     }
 }

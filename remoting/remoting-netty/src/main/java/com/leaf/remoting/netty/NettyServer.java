@@ -111,17 +111,18 @@ public class NettyServer extends NettyServiceAbstract implements RemotingServer 
         serverBootstrap.group(nioEventLoopGroupMain, nioEventLoopGroupWorker)
                 .channel(NioServerSocketChannel.class)
                 .option(ChannelOption.SO_BACKLOG, 32768)
+                .childOption(ChannelOption.SO_KEEPALIVE,  false)
                 .childOption(ChannelOption.SO_SNDBUF, config.getServerSocketSndBufSize())
                 .childOption(ChannelOption.SO_RCVBUF, config.getServerSocketRcvBufSize())
                 .childHandler(new ChannelInitializer<SocketChannel>() {
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         socketChannel.pipeline().addLast(
+                                new IdleStateHandler(config.getIdleReadSeconds(), 0, config.getIdleAllSeconds()),
                                 encoder,
                                 new NettyDecoder(),
-                                nettyServerHandler,
-                                new IdleStateHandler(0, 0, config.getIdleAllSeconds()),
-                                nettyConnectManageHandler
+                                nettyConnectManageHandler,
+                                nettyServerHandler
                         );
                     }
                 });
@@ -185,8 +186,8 @@ public class NettyServer extends NettyServiceAbstract implements RemotingServer 
             logger.debug("NETTY SERVER PIPELINE: channelActive, the channel[{}]", remoteAddress);
             super.channelActive(ctx);
 
-            if (NettyServer.this.channelEventListener != null) {
-                NettyServer.this.putChannelEvent(new ChannelEvent(ChannelEventType.ACTIVE, remoteAddress, ctx.channel()));
+            if (channelEventListener != null) {
+                putChannelEvent(new ChannelEvent(ChannelEventType.ACTIVE, remoteAddress, ctx.channel()));
             }
         }
 
@@ -196,8 +197,8 @@ public class NettyServer extends NettyServiceAbstract implements RemotingServer 
             logger.debug("NETTY SERVER PIPELINE: channelInactive, the channel[{}]", remoteAddress);
             super.channelInactive(ctx);
 
-            if (NettyServer.this.channelEventListener != null) {
-                NettyServer.this.putChannelEvent(new ChannelEvent(ChannelEventType.INACTIVE, remoteAddress, ctx.channel()));
+            if (channelEventListener != null) {
+                putChannelEvent(new ChannelEvent(ChannelEventType.INACTIVE, remoteAddress, ctx.channel()));
             }
         }
 
@@ -205,12 +206,28 @@ public class NettyServer extends NettyServiceAbstract implements RemotingServer 
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
             if (evt instanceof IdleStateEvent) {
                 IdleStateEvent event = (IdleStateEvent) evt;
-                if (event.state().equals(IdleState.ALL_IDLE)) {
-                    final String remoteAddress = ctx.channel().remoteAddress().toString();
-                    if (NettyServer.this.channelEventListener != null) {
-                        NettyServer.this
-                                .putChannelEvent(new ChannelEvent(ChannelEventType.IDLE, remoteAddress, ctx.channel()));
-                    }
+                final String remoteAddress = ctx.channel().remoteAddress().toString();
+                switch (event.state()) {
+                    case ALL_IDLE:
+                        if (channelEventListener != null) {
+                            putChannelEvent(new ChannelEvent(ChannelEventType.ALL_IDLE, remoteAddress, ctx.channel()));
+                        }
+                        break;
+                    case READER_IDLE:
+                        if (channelEventListener != null) {
+                            putChannelEvent(new ChannelEvent(ChannelEventType.READ_IDLE, remoteAddress, ctx.channel()));
+                        }
+                        ctx.channel().close().addListener(new ChannelFutureListener() {
+                            @Override
+                            public void operationComplete(ChannelFuture channelFuture) throws Exception {
+                                logger.warn("close channel: {} channel read idle more than: {}, isSuccess: {} ",
+                                        channelFuture.channel(),
+                                        config.getIdleReadSeconds(),
+                                        channelFuture.isSuccess()
+                                );
+                            }
+                        });
+                        break;
                 }
             }
 
@@ -224,8 +241,8 @@ public class NettyServer extends NettyServiceAbstract implements RemotingServer 
             logger.error(cause.getMessage(), cause);
             ctx.channel().close();
 
-            if (NettyServer.this.channelEventListener != null) {
-                NettyServer.this.putChannelEvent(new ChannelEvent(ChannelEventType.EXCEPTION, remoteAddress, ctx.channel()));
+            if (channelEventListener != null) {
+                putChannelEvent(new ChannelEvent(ChannelEventType.EXCEPTION, remoteAddress, ctx.channel()));
             }
 
         }

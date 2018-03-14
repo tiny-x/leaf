@@ -7,7 +7,7 @@ import com.leaf.common.constants.Constants;
 import com.leaf.common.utils.AnyThrow;
 import com.leaf.common.utils.Collections;
 import com.leaf.register.api.AbstractRegisterService;
-import com.leaf.register.api.model.Notify;
+import com.leaf.register.api.model.Message;
 import com.leaf.register.api.model.RegisterMeta;
 import com.leaf.register.api.model.SubscribeMeta;
 import com.leaf.remoting.api.*;
@@ -218,19 +218,16 @@ public class DefaultRegisterClient {
         @Override
         public ResponseCommand process(ChannelHandlerContext context, RequestCommand request) {
             Serializer serializer = SerializerFactory.serializer(SerializerType.parse(request.getSerializerCode()));
-            Notify notifyData = serializer.deserialize(request.getBody(), Notify.class);
+            Message messageData = serializer.deserialize(request.getBody(), Message.class);
             switch (request.getMessageCode()) {
                 case ProtocolHead.SUBSCRIBE_SERVICE: {
-                    if (Collections.isEmpty(notifyData.getRegisterMetas())) {
-                        throw new IllegalStateException("[SUBSCRIBE]" + notifyData.getServiceMeta() + " no provider!");
-                    }
-                    registerService.notify(notifyData.getServiceMeta(),
-                            notifyData.getEvent(),
-                            notifyData.getRegisterMetas());
+                    registerService.notify(messageData.getServiceMeta(),
+                            messageData.getEvent(),
+                            messageData.getRegisterMetas());
                     break;
                 }
                 case ProtocolHead.OFFLINE_SERVICE: {
-                    UnresolvedAddress address = notifyData.getAddress();
+                    UnresolvedAddress address = messageData.getAddress();
                     registerService.offline(address);
                     break;
                 }
@@ -278,13 +275,10 @@ public class DefaultRegisterClient {
                     if (responseCommand.getStatus() == ResponseStatus.SUCCESS.value()) {
                         resendMessages.remove(responseCommand.getInvokeId());
 
-                        Notify notifyData = serializer.deserialize(responseCommand.getBody(), Notify.class);
-                        if (Collections.isEmpty(notifyData.getRegisterMetas())) {
-                            throw new IllegalStateException("[SUBSCRIBE] " + notifyData.getServiceMeta() + " no provider!");
-                        }
-                        registerService.notify(notifyData.getServiceMeta(),
-                                notifyData.getEvent(),
-                                notifyData.getRegisterMetas());
+                        Message messageData = serializer.deserialize(responseCommand.getBody(), Message.class);
+                        registerService.notify(messageData.getServiceMeta(),
+                                messageData.getEvent(),
+                                messageData.getRegisterMetas());
                     } else {
                         logger.warn("[SUBSCRIBE] receive register message, but response status: {}",
                                 responseCommand.getMessageCode());

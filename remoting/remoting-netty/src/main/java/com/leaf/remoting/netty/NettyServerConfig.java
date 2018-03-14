@@ -10,6 +10,7 @@ public class NettyServerConfig {
     private int connCount = 4;
 
     private int idleAllSeconds = NettySystemConfig.IO_IDLE_ALL_TIME_SECONDS;
+    private int idleReadSeconds = NettySystemConfig.IO_IDLE_READ_TIME_SECONDS;
 
     private int serverSocketSndBufSize = NettySystemConfig.socketSndbufSize;
     private int serverSocketRcvBufSize = NettySystemConfig.socketRcvbufSize;
@@ -80,5 +81,13 @@ public class NettyServerConfig {
 
     public void setInvokeTimeoutMillis(long invokeTimeoutMillis) {
         this.invokeTimeoutMillis = invokeTimeoutMillis;
+    }
+
+    public int getIdleReadSeconds() {
+        return idleReadSeconds;
+    }
+
+    public void setIdleReadSeconds(int idleReadSeconds) {
+        this.idleReadSeconds = idleReadSeconds;
     }
 }

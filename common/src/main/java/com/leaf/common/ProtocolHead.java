@@ -14,6 +14,8 @@ package com.leaf.common;
  */
 public class ProtocolHead {
 
+    public static final int HEADER_SIZE = 16;
+
     // ====== messageCode 奇数 request 偶数 response
     public static final byte REQUEST = 0x01;     // rpc request
     public static final byte RESPONSE = 0x02;     // rpc response
@@ -31,6 +33,8 @@ public class ProtocolHead {
     public static final byte ONEWAY_REQUEST = 0x0B;  // 单向调用
 
     public static final byte LOOKUP_SERVICE = 0x0D;  // 查找服务
+
+    public static final byte HEARTBEAT = 0x0F;
 
     // ====== serializerCode
     public static final byte PROTO_STUFF = 0x01;
@@ -62,8 +66,8 @@ public class ProtocolHead {
     }
 
     public void setSign(byte sign) {
-        this.serializerCode = (byte) (sign & 0x0F);
         this.messageCode = (byte) ((sign & 0xF0) >> 4);
+        this.serializerCode = (byte) (sign & 0x0F);
     }
 
     public byte getSign(byte sign) {

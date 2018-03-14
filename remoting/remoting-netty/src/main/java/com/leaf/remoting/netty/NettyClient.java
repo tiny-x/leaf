@@ -1,5 +1,6 @@
 package com.leaf.remoting.netty;
 
+import com.leaf.common.ProtocolHead;
 import com.leaf.remoting.api.*;
 import com.leaf.remoting.api.exception.RemotingConnectException;
 import com.leaf.remoting.api.exception.RemotingConnectTimeoutException;
@@ -17,6 +18,8 @@ import com.leaf.remoting.channel.NettyChannelGroup;
 import com.leaf.remoting.netty.event.ChannelEvent;
 import com.leaf.remoting.netty.event.ChannelEventType;
 import io.netty.bootstrap.Bootstrap;
+import io.netty.buffer.ByteBuf;
+import io.netty.buffer.Unpooled;
 import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
@@ -252,9 +255,9 @@ public class NettyClient extends NettyServiceAbstract implements RemotingClient 
                     @Override
                     protected void initChannel(SocketChannel socketChannel) throws Exception {
                         socketChannel.pipeline().addLast(
+                                new IdleStateHandler(0, config.getIdleWriteSeconds(), config.getIdleAllSeconds()),
                                 encoder,
                                 new NettyDecoder(),
-                                new IdleStateHandler(0, 0, config.getIdleAllSeconds()),
                                 nettyConnectManageHandler
                         );
                     }
@@ -432,12 +435,24 @@ public class NettyClient extends NettyServiceAbstract implements RemotingClient 
         public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
             if (evt instanceof IdleStateEvent) {
                 IdleStateEvent event = (IdleStateEvent) evt;
-                if (event.state().equals(IdleState.ALL_IDLE)) {
-                    final String remoteAddress = ctx.channel().remoteAddress().toString();
-                    if (NettyClient.this.channelEventListener != null) {
-                        NettyClient.this
-                                .putChannelEvent(new ChannelEvent(ChannelEventType.IDLE, remoteAddress, ctx.channel()));
-                    }
+                final String remoteAddress = ctx.channel().remoteAddress().toString();
+                switch (event.state()) {
+                    case ALL_IDLE:
+                        if (NettyClient.this.channelEventListener != null) {
+                            NettyClient.this.putChannelEvent(new ChannelEvent(ChannelEventType.ALL_IDLE, remoteAddress, ctx.channel()));
+                        }
+                        break;
+                    case WRITER_IDLE:
+                        if (NettyClient.this.channelEventListener != null) {
+                            NettyClient.this.putChannelEvent(new ChannelEvent(ChannelEventType.WRITE_IDLE, remoteAddress, ctx.channel()));
+                        }
+                        ctx.channel().writeAndFlush(Heartbeats.heartbeatContent()).addListener(new ChannelFutureListener() {
+                            @Override
+                            public void operationComplete(ChannelFuture channelFuture) throws Exception {
+                                logger.debug("channel write idle , send heartbeat, isSuccess:{}", channelFuture.isSuccess());
+                            }
+                        });
+                        break;
                 }
             }
             ctx.fireUserEventTriggered(evt);

@@ -4,9 +4,7 @@ import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.register.api.NotifyEvent;
 
-import java.util.List;
-
-public class Notify {
+public class Message {
 
     private UnresolvedAddress address;
 
@@ -14,13 +12,13 @@ public class Notify {
 
     private ServiceMeta serviceMeta;
 
-    private List<RegisterMeta> registerMetas;
+    private RegisterMeta[] registerMetas;
 
-    public Notify(UnresolvedAddress address) {
+    public Message(UnresolvedAddress address) {
         this.address = address;
     }
 
-    public Notify(NotifyEvent event, ServiceMeta serviceMeta, List<RegisterMeta> registerMetas) {
+    public Message(NotifyEvent event, ServiceMeta serviceMeta, RegisterMeta... registerMetas) {
         this.event = event;
         this.serviceMeta = serviceMeta;
         this.registerMetas = registerMetas;
@@ -30,7 +28,6 @@ public class Notify {
         return event;
     }
 
-
     public ServiceMeta getServiceMeta() {
         return serviceMeta;
     }
@@ -39,8 +36,7 @@ public class Notify {
         return address;
     }
 
-    public List<RegisterMeta> getRegisterMetas() {
+    public RegisterMeta[] getRegisterMetas() {
         return registerMetas;
     }
-
 }

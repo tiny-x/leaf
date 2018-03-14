@@ -203,18 +203,16 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                         PathChildrenCacheEvent.Type type = event.getType();
                         switch (type) {
                             case CHILD_ADDED: {
-                                List<RegisterMeta> registerMetaList = parseProviderPath(event.getData().getPath());
-                                RegisterMeta registerMeta = registerMetaList.get(0);
+                                RegisterMeta registerMeta = parseProviderPath(event.getData().getPath());
 
                                 ConcurrentSet<RegisterMeta> registerMetas = getRegisterMetas(registerMeta);
                                 registerMetas.add(registerMeta);
 
-                                ZookeeperRegisterService.super.notify(subscribeMeta.getServiceMeta(), NotifyEvent.ADD, registerMetaList);
+                                ZookeeperRegisterService.super.notify(subscribeMeta.getServiceMeta(), NotifyEvent.ADD, registerMeta);
                                 break;
                             }
                             case CHILD_REMOVED: {
-                                List<RegisterMeta> registerMetaList = parseProviderPath(event.getData().getPath());
-                                RegisterMeta registerMeta = registerMetaList.get(0);
+                                RegisterMeta registerMeta = parseProviderPath(event.getData().getPath());
 
                                 ConcurrentSet<RegisterMeta> registerMetas = getRegisterMetas(registerMeta);
                                 registerMetas.remove(registerMeta);
@@ -225,7 +223,7 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                                     ZookeeperRegisterService.super.offline(registerMeta.getAddress());
                                 }
 
-                                ZookeeperRegisterService.super.notify(subscribeMeta.getServiceMeta(), NotifyEvent.REMOVE, registerMetaList);
+                                ZookeeperRegisterService.super.notify(subscribeMeta.getServiceMeta(), NotifyEvent.REMOVE, registerMeta);
                                 break;
                             }
                         }
@@ -276,10 +274,10 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
      * @param path
      * @return
      */
-    private List<RegisterMeta> parseProviderPath(String path) {
-        List<RegisterMeta> registerMetaList = new ArrayList<>();
+    private RegisterMeta parseProviderPath(String path) {
+
         RegisterMeta registerMeta = new RegisterMeta();
-        registerMetaList.add(registerMeta);
+
         String[] strings0 = path.split("/");
 
         ServiceMeta serviceMeta = new ServiceMeta(strings0[2], strings0[3], strings0[4]);
@@ -293,6 +291,6 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
         registerMeta.setAddress(unresolvedAddress);
         registerMeta.setWeight(Integer.valueOf(strings1[1]));
         registerMeta.setConnCount(Integer.valueOf(strings1[2]));
-        return registerMetaList;
+        return registerMeta;
     }
 }

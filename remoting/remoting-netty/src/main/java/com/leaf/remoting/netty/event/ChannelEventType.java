@@ -5,6 +5,8 @@ public enum  ChannelEventType {
     INACTIVE,
     CONNECT,
     CLOSE,
-    IDLE,
+    ALL_IDLE,
+    WRITE_IDLE,
+    READ_IDLE,
     EXCEPTION
 }
