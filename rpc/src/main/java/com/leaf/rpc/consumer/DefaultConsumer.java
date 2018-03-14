@@ -2,10 +2,12 @@ package com.leaf.rpc.consumer;
 
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.model.Directory;
+import com.leaf.common.utils.InetUtils;
 import com.leaf.register.api.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.common.utils.AnyThrow;
 import com.leaf.register.api.*;
+import com.leaf.register.api.model.SubscribeMeta;
 import com.leaf.remoting.api.RemotingClient;
 import com.leaf.remoting.netty.NettyClient;
 import com.leaf.remoting.netty.NettyClientConfig;
@@ -61,7 +63,10 @@ public class DefaultConsumer implements Consumer {
 
     @Override
     public void subscribe(Directory directory, NotifyListener listener) {
-        registerService.subscribe((ServiceMeta) directory, listener);
+        SubscribeMeta subscribeMeta = new SubscribeMeta();
+        subscribeMeta.setServiceMeta((ServiceMeta) directory);
+        subscribeMeta.setAddressHost(InetUtils.getLocalHost());
+        registerService.subscribe(subscribeMeta, listener);
     }
 
     @Override

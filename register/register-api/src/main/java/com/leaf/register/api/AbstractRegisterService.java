@@ -2,9 +2,10 @@ package com.leaf.register.api;
 
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.concurrent.ConcurrentSet;
-import com.leaf.register.api.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.common.utils.Collections;
+import com.leaf.register.api.model.RegisterMeta;
+import com.leaf.register.api.model.SubscribeMeta;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -13,7 +14,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public abstract class AbstractRegisterService implements RegisterService {
+public abstract class AbstractRegisterService extends AbstractRetryRegisterService {
 
     private final static Logger logger = LoggerFactory.getLogger(AbstractRegisterService.class);
 
@@ -34,29 +35,30 @@ public abstract class AbstractRegisterService implements RegisterService {
     /**
      * 已经订阅的服务
      */
-    private final ConcurrentSet<ServiceMeta> consumersServiceMeta = new ConcurrentSet<>();
+    private final ConcurrentSet<SubscribeMeta> consumersServiceMeta = new ConcurrentSet<>();
 
+    public AbstractRegisterService() {
+    }
 
     @Override
     public void register(RegisterMeta registerMeta) {
         logger.info("[REGISTER] register service: {}", registerMeta);
-        providerRegisterMetas.add(registerMeta);
         doRegister(registerMeta);
     }
 
     @Override
     public void unRegister(RegisterMeta registerMeta) {
         logger.info("[UN_REGISTER] unRegister service: {}", registerMeta);
-        providerRegisterMetas.remove(registerMeta);
         doUnRegister(registerMeta);
+        providerRegisterMetas.remove(registerMeta);
     }
 
     @Override
-    public void subscribe(ServiceMeta serviceMeta, NotifyListener notifyListener) {
-        logger.info("[SUBSCRIBE] subscribe service: {}", serviceMeta);
-        subscribeListeners.put(serviceMeta, notifyListener);
-        consumersServiceMeta.add(serviceMeta);
-        doSubscribe(serviceMeta);
+    public void subscribe(SubscribeMeta subscribeMeta, NotifyListener notifyListener) {
+        logger.info("[SUBSCRIBE] subscribe service: {}", subscribeMeta);
+        subscribeListeners.put(subscribeMeta.getServiceMeta(), notifyListener);
+        consumersServiceMeta.add(subscribeMeta);
+        doSubscribe(subscribeMeta);
     }
 
     @Override
@@ -104,14 +106,8 @@ public abstract class AbstractRegisterService implements RegisterService {
         return providerRegisterMetas;
     }
 
-    public ConcurrentSet<ServiceMeta> getConsumersServiceMetas() {
+    public ConcurrentSet<SubscribeMeta> getConsumersServiceMetas() {
         return consumersServiceMeta;
     }
-
-    protected abstract void doRegister(RegisterMeta registerMeta);
-
-    protected abstract void doUnRegister(RegisterMeta registerMeta);
-
-    protected abstract void doSubscribe(ServiceMeta serviceMeta);
 
 }

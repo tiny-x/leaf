@@ -34,8 +34,10 @@ public class ProviderExample {
                             .register();
                     provider.connectToRegistryServer("127.0.0.1:2181");
                     provider.publishService(serviceWrapper);
+                    countDownLatch.countDown();
                 }
             }).start();
+            Thread.sleep(500);
         }
         countDownLatch.await();
 

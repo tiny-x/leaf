@@ -1,12 +1,12 @@
 package com.leaf.register;
 
 import com.leaf.common.UnresolvedAddress;
-import com.leaf.register.api.model.RegisterMeta;
-import com.leaf.common.model.ServiceMeta;
 import com.leaf.common.utils.InetUtils;
 import com.leaf.register.api.AbstractRegisterService;
 import com.leaf.register.api.RegisterService;
 import com.leaf.register.api.RegisterType;
+import com.leaf.register.api.model.RegisterMeta;
+import com.leaf.register.api.model.SubscribeMeta;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -47,6 +47,7 @@ public class DefaultRegisterService extends AbstractRegisterService implements R
         for (Map.Entry<UnresolvedAddress, DefaultRegisterClient> register : registerClients.entrySet()) {
             register.getValue().register(registerMeta);
         }
+        getProviderRegisterMetas().add(registerMeta);
     }
 
     @Override
@@ -59,11 +60,11 @@ public class DefaultRegisterService extends AbstractRegisterService implements R
     }
 
     @Override
-    public void doSubscribe(ServiceMeta serviceMeta) {
+    public void doSubscribe(SubscribeMeta subscribeMeta) {
         checkArgument(!registerClients.isEmpty(), "not connect any registry server");
 
         for (Map.Entry<UnresolvedAddress, DefaultRegisterClient> register : registerClients.entrySet()) {
-            register.getValue().subscribe(serviceMeta);
+            register.getValue().subscribe(subscribeMeta);
         }
     }
 

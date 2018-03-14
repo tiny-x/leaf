@@ -8,7 +8,7 @@ import com.leaf.rpc.consumer.DefaultConsumer;
 
 public class ConsumerExample {
 
-    public static void main(String[] args) {
+    public static void main(String[] args) throws InterruptedException {
         Consumer consumer = new DefaultConsumer("consumer", RegisterType.ZOOKEEPER);
         consumer.connectToRegistryServer("127.0.0.1:2181");
 
@@ -17,6 +17,7 @@ public class ConsumerExample {
                 .timeMillis(3000L)
                 .newProxy();
 
+        Thread.sleep(1000);
         String s = helloService.sayHello(" biu biu biu!!!");
         System.out.println(s);
 

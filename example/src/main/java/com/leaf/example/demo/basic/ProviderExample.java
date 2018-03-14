@@ -15,7 +15,7 @@ public class ProviderExample {
         config.setPort(9180);
         Provider provider = new DefaultProvider(config);
         provider.start();
-        provider.registerGlobalFlowController(new RateLimitFlowController(100));
+        provider.registerGlobalFlowController(new RateLimitFlowController(100000));
         HelloService helloService = new HelloServiceImpl();
 
         // 注册到本地容器 未发布到注册中心

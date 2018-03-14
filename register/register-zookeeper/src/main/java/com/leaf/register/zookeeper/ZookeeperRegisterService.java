@@ -3,12 +3,13 @@ package com.leaf.register.zookeeper;
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.concurrent.ConcurrentSet;
 import com.leaf.common.constants.Constants;
-import com.leaf.register.api.model.RegisterMeta;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.common.utils.Maps;
 import com.leaf.register.api.AbstractRegisterService;
 import com.leaf.register.api.NotifyEvent;
 import com.leaf.register.api.RegisterType;
+import com.leaf.register.api.model.RegisterMeta;
+import com.leaf.register.api.model.SubscribeMeta;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.api.BackgroundCallback;
@@ -20,6 +21,7 @@ import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -36,7 +38,7 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
 
     private static final int SESSION_TIMEOUT = 3000;
 
-    private final ConcurrentMap<ServiceMeta, PathChildrenCache> pathChildrenCache = Maps.newConcurrentMap();
+    private final ConcurrentMap<SubscribeMeta, PathChildrenCache> pathChildrenCache = Maps.newConcurrentMap();
 
     /**
      * 指定地址上注册的服务，当注册的服务为空时，通知下线（客户端断开与原有服务端的连接）
@@ -70,8 +72,8 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                 switch (connectionState) {
                     case RECONNECTED: {
                         // 断线重连
-                        for (ServiceMeta serviceMeta : getConsumersServiceMetas()) {
-                            doSubscribe(serviceMeta);
+                        for (SubscribeMeta subscribeMeta : getConsumersServiceMetas()) {
+                            doSubscribe(subscribeMeta);
                         }
                         for (RegisterMeta registerMeta : getProviderRegisterMetas()) {
                             doRegister(registerMeta);
@@ -106,7 +108,13 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
             curatorFramework.create().withMode(CreateMode.EPHEMERAL).inBackground(new BackgroundCallback() {
                 @Override
                 public void processResult(CuratorFramework curatorFramework, CuratorEvent curatorEvent) throws Exception {
-                    logger.info("zookeeper do register registerMeta: {} result: {}", registerMeta, curatorEvent.getResultCode());
+                    int resultCode = curatorEvent.getResultCode();
+                    logger.info("zookeeper do register registerMeta: {} result: {}", registerMeta, resultCode);
+                    if (KeeperException.Code.OK.intValue() == resultCode) {
+                        ZookeeperRegisterService.super.getProviderRegisterMetas().add(registerMeta);
+                    } else {
+                        ZookeeperRegisterService.super.retryRegister(registerMeta);
+                    }
                 }
             }).forPath(String.format("%s/%s&%s&%s",
                     directory,
@@ -147,16 +155,16 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                     String.valueOf(registerMeta.getConnCount())
             ));
         } catch (Exception e) {
-            logger.error("create register meta mode fail: {}", registerMeta.toString(), e);
+            logger.warn("create register meta mode fail: {}", registerMeta.toString(), e);
         }
     }
 
     @Override
-    protected void doSubscribe(final ServiceMeta serviceMeta) {
+    protected void doSubscribe(final SubscribeMeta subscribeMeta) {
         String directory = String.format("/consumers/%s/%s/%s",
-                serviceMeta.getGroup(),
-                serviceMeta.getServiceProviderName(),
-                serviceMeta.getVersion()
+                subscribeMeta.getServiceMeta().getGroup(),
+                subscribeMeta.getServiceMeta().getServiceProviderName(),
+                subscribeMeta.getServiceMeta().getVersion()
         );
         try {
             if (curatorFramework.checkExists().forPath(directory) == null) {
@@ -166,16 +174,27 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
             logger.warn("create parent node fail directory: {}", directory, e);
         }
 
-        PathChildrenCache pathChildrenCache = this.pathChildrenCache.get(serviceMeta);
+        try {
+            curatorFramework.create().withMode(CreateMode.EPHEMERAL).forPath(
+                    String.format("%s/%s",
+                            directory,
+                            subscribeMeta.getAddressHost())
+            );
+        } catch (Exception e) {
+            logger.warn("create subscribe meta mode fail: {}", subscribeMeta.toString(), e);
+        }
+
+        PathChildrenCache pathChildrenCache = this.pathChildrenCache.get(subscribeMeta);
+
         if (pathChildrenCache == null) {
             String directoryProviders = String.format("/providers/%s/%s/%s",
-                    serviceMeta.getGroup(),
-                    serviceMeta.getServiceProviderName(),
-                    serviceMeta.getVersion()
+                    subscribeMeta.getServiceMeta().getGroup(),
+                    subscribeMeta.getServiceMeta().getServiceProviderName(),
+                    subscribeMeta.getServiceMeta().getVersion()
             );
             PathChildrenCache newChildrenCache = new PathChildrenCache(curatorFramework, directoryProviders, false);
             // 添加一次监听
-            pathChildrenCache = this.pathChildrenCache.putIfAbsent(serviceMeta, newChildrenCache);
+            pathChildrenCache = this.pathChildrenCache.putIfAbsent(subscribeMeta, newChildrenCache);
             if (pathChildrenCache == null) {
                 pathChildrenCache = newChildrenCache;
                 pathChildrenCache.getListenable().addListener(new PathChildrenCacheListener() {
@@ -190,7 +209,7 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                                 ConcurrentSet<RegisterMeta> registerMetas = getRegisterMetas(registerMeta);
                                 registerMetas.add(registerMeta);
 
-                                ZookeeperRegisterService.super.notify(serviceMeta, NotifyEvent.ADD, registerMetaList);
+                                ZookeeperRegisterService.super.notify(subscribeMeta.getServiceMeta(), NotifyEvent.ADD, registerMetaList);
                                 break;
                             }
                             case CHILD_REMOVED: {
@@ -206,7 +225,7 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                                     ZookeeperRegisterService.super.offline(registerMeta.getAddress());
                                 }
 
-                                ZookeeperRegisterService.super.notify(serviceMeta, NotifyEvent.REMOVE, registerMetaList);
+                                ZookeeperRegisterService.super.notify(subscribeMeta.getServiceMeta(), NotifyEvent.REMOVE, registerMetaList);
                                 break;
                             }
                         }
@@ -215,7 +234,7 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                 try {
                     pathChildrenCache.start();
                 } catch (Exception e) {
-                    logger.error("zookeeper doSubscribe fail service meta: {}", serviceMeta, e);
+                    logger.error("zookeeper doSubscribe fail service meta: {}", subscribeMeta, e);
                 }
             } else {
                 try {

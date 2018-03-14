@@ -11,6 +11,7 @@ import com.leaf.common.utils.Maps;
 import com.leaf.register.DefaultRegisterServer;
 import com.leaf.register.api.NotifyEvent;
 import com.leaf.register.api.model.Notify;
+import com.leaf.register.api.model.SubscribeMeta;
 import com.leaf.remoting.api.ChannelEventAdapter;
 import com.leaf.remoting.api.InvokeCallback;
 import com.leaf.remoting.api.RemotingCommandFactory;
@@ -50,9 +51,9 @@ public class RegisterProcess implements RequestProcessor {
                 (byte) SystemPropertyUtil.getInt("serializer.serializerType", SerializerType.PROTO_STUFF.value()));
     }
 
-    private final ConcurrentMap<String, ConcurrentSet<ServiceMeta>> CONSUMER_MAP = Maps.newConcurrentMap();
+    private final ConcurrentMap<String, ConcurrentSet<SubscribeMeta>> CONSUMER_MAP = Maps.newConcurrentMap();
     private final ConcurrentMap<String, ConcurrentSet<RegisterMeta>> PROVIDER_MAP = Maps.newConcurrentMap();
-    private final AttributeKey<ConcurrentSet<ServiceMeta>> SUBSCRIBE_KEY = AttributeKey.valueOf("server.subscribed");
+    private final AttributeKey<ConcurrentSet<SubscribeMeta>> SUBSCRIBE_KEY = AttributeKey.valueOf("server.subscribed");
     private final AttributeKey<ConcurrentSet<RegisterMeta>> PUBLISH_KEY = AttributeKey.valueOf("server.publish");
     private final DefaultRegisterServer defaultRegisterServer;
     // 订阅者
@@ -138,29 +139,29 @@ public class RegisterProcess implements RequestProcessor {
 
     // 订阅服务
     private ResponseCommand handleSubscribeService(ChannelHandlerContext context, RequestCommand request, Serializer serializer) {
-        ServiceMeta serviceMeta = serializer.deserialize(request.getBody(), ServiceMeta.class);
+        SubscribeMeta subscribeMeta = serializer.deserialize(request.getBody(), SubscribeMeta.class);
 
-        logger.info("[SUBSCRIBE] subscribe service: {}", serviceMeta);
+        logger.info("[SUBSCRIBE] subscribe service: {}", subscribeMeta);
 
         // channel 附上 订阅的服务（三元素）
         Channel channel = context.channel();
-        attachSubscribeEvent(serviceMeta, channel);
+        attachSubscribeEvent(subscribeMeta, channel);
 
-        String serviceProviderName = serviceMeta.getServiceProviderName();
-        ConcurrentSet<ServiceMeta> consumers = CONSUMER_MAP.get(serviceProviderName);
+        String serviceProviderName = subscribeMeta.getServiceMeta().getServiceProviderName();
+        ConcurrentSet<SubscribeMeta> consumers = CONSUMER_MAP.get(serviceProviderName);
         if (consumers == null) {
-            ConcurrentSet<ServiceMeta> newConsumers = new ConcurrentSet();
+            ConcurrentSet<SubscribeMeta> newConsumers = new ConcurrentSet();
             consumers = CONSUMER_MAP.putIfAbsent(serviceProviderName, newConsumers);
             if (consumers == null) {
                 consumers = newConsumers;
             }
         }
-        consumers.add(serviceMeta);
+        consumers.add(subscribeMeta);
 
         ConcurrentSet<RegisterMeta> providers = PROVIDER_MAP.get(serviceProviderName);
         Notify notify = new Notify(
                 NotifyEvent.ADD,
-                serviceMeta,
+                subscribeMeta.getServiceMeta(),
                 new ArrayList<>(providers)
         );
 
@@ -264,9 +265,9 @@ public class RegisterProcess implements RequestProcessor {
     }
 
     private boolean channelIsSubscribeService(Channel channel, ServiceMeta serviceMeta) {
-        Attribute<ConcurrentSet<ServiceMeta>> attr = channel.attr(SUBSCRIBE_KEY);
-        ConcurrentSet<ServiceMeta> serviceMetas = attr.get();
-        if (Collections.isNotEmpty(serviceMetas) && serviceMetas.contains(serviceMeta)) {
+        Attribute<ConcurrentSet<SubscribeMeta>> attr = channel.attr(SUBSCRIBE_KEY);
+        ConcurrentSet<SubscribeMeta> subscribeMetas = attr.get();
+        if (Collections.isNotEmpty(subscribeMetas) && subscribeMetas.contains(serviceMeta)) {
             return true;
         }
         return false;
@@ -296,17 +297,17 @@ public class RegisterProcess implements RequestProcessor {
         services.remove(registerMeta);
     }
 
-    private void attachSubscribeEvent(ServiceMeta serviceMeta, Channel channel) {
-        Attribute<ConcurrentSet<ServiceMeta>> attr = channel.attr(SUBSCRIBE_KEY);
-        ConcurrentSet<ServiceMeta> serviceMetas = attr.get();
-        if (serviceMetas == null) {
-            ConcurrentSet<ServiceMeta> newServiceMetas = new ConcurrentSet<>();
-            serviceMetas = attr.setIfAbsent(newServiceMetas);
-            if (serviceMetas == null) {
-                serviceMetas = newServiceMetas;
+    private void attachSubscribeEvent(SubscribeMeta subscribeMeta, Channel channel) {
+        Attribute<ConcurrentSet<SubscribeMeta>> attr = channel.attr(SUBSCRIBE_KEY);
+        ConcurrentSet<SubscribeMeta> subscribeMetas = attr.get();
+        if (subscribeMetas == null) {
+            ConcurrentSet<SubscribeMeta> newSubcrcibeMetas = new ConcurrentSet<>();
+            subscribeMetas = attr.setIfAbsent(newSubcrcibeMetas);
+            if (subscribeMetas == null) {
+                subscribeMetas = newSubcrcibeMetas;
             }
         }
-        serviceMetas.add(serviceMeta);
+        subscribeMetas.add(subscribeMeta);
         subscriberChannels.add(channel);
     }
 

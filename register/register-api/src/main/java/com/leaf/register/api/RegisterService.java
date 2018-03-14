@@ -3,7 +3,7 @@ package com.leaf.register.api;
 
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.register.api.model.RegisterMeta;
-import com.leaf.common.model.ServiceMeta;
+import com.leaf.register.api.model.SubscribeMeta;
 
 import java.util.List;
 
@@ -13,7 +13,7 @@ public interface RegisterService {
 
     void unRegister(RegisterMeta RegisterMeta);
 
-    void subscribe(ServiceMeta serviceMeta, NotifyListener notifyListener);
+    void subscribe(SubscribeMeta subscribeMeta, NotifyListener notifyListener);
 
     List<RegisterMeta> lookup(RegisterMeta RegisterMeta);
 

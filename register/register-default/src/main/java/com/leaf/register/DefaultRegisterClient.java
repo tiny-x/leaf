@@ -4,12 +4,12 @@ import com.leaf.common.ProtocolHead;
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.concurrent.ConcurrentSet;
 import com.leaf.common.constants.Constants;
-import com.leaf.register.api.model.RegisterMeta;
-import com.leaf.common.model.ServiceMeta;
 import com.leaf.common.utils.AnyThrow;
 import com.leaf.common.utils.Collections;
 import com.leaf.register.api.AbstractRegisterService;
 import com.leaf.register.api.model.Notify;
+import com.leaf.register.api.model.RegisterMeta;
+import com.leaf.register.api.model.SubscribeMeta;
 import com.leaf.remoting.api.*;
 import com.leaf.remoting.api.channel.ChannelGroup;
 import com.leaf.remoting.api.future.ResponseFuture;
@@ -39,7 +39,7 @@ public class DefaultRegisterClient {
 
     private static final AttributeKey<ConcurrentSet<RegisterMeta>> REGISTER_KEY = AttributeKey.valueOf("register.key");
 
-    private static final AttributeKey<ConcurrentSet<ServiceMeta>> SUBSCRIBE_KEY = AttributeKey.valueOf("subscribe.key");
+    private static final AttributeKey<ConcurrentSet<SubscribeMeta>> SUBSCRIBE_KEY = AttributeKey.valueOf("subscribe.key");
     private static final SerializerType serializerType;
 
     static {
@@ -147,13 +147,13 @@ public class DefaultRegisterClient {
     }
 
 
-    public void subscribe(ServiceMeta serviceMeta) {
-        if (attachSubscribeEvent(serviceMeta, channel)) {
+    public void subscribe(SubscribeMeta subscribeMeta) {
+        if (attachSubscribeEvent(subscribeMeta, channel)) {
             Serializer serializer = SerializerFactory.serializer(serializerType);
             RequestCommand requestCommand = RemotingCommandFactory.createRequestCommand(
                     ProtocolHead.SUBSCRIBE_SERVICE,
                     serializerType.value(),
-                    serializer.serialize(serviceMeta));
+                    serializer.serialize(subscribeMeta));
             sendMessageToRegister(requestCommand);
         }
     }
@@ -180,16 +180,16 @@ public class DefaultRegisterClient {
     }
 
     // channel 附着订阅的服务，忽略重复订阅
-    private boolean attachSubscribeEvent(ServiceMeta serviceMeta, Channel channel) {
-        ConcurrentSet<ServiceMeta> serviceMetas = channel.attr(SUBSCRIBE_KEY).get();
-        if (serviceMetas == null) {
-            ConcurrentSet<ServiceMeta> newServiceMetas = new ConcurrentSet<>();
-            serviceMetas = channel.attr(SUBSCRIBE_KEY).setIfAbsent(newServiceMetas);
-            if (serviceMetas == null) {
-                serviceMetas = newServiceMetas;
+    private boolean attachSubscribeEvent(SubscribeMeta subscribeMeta, Channel channel) {
+        ConcurrentSet<SubscribeMeta> subscribeMetas = channel.attr(SUBSCRIBE_KEY).get();
+        if (subscribeMetas == null) {
+            ConcurrentSet<SubscribeMeta> newSubscribeMetas = new ConcurrentSet<>();
+            subscribeMetas = channel.attr(SUBSCRIBE_KEY).setIfAbsent(newSubscribeMetas);
+            if (subscribeMetas == null) {
+                subscribeMetas = newSubscribeMetas;
             }
         }
-        return serviceMetas.add(serviceMeta);
+        return subscribeMetas.add(subscribeMeta);
     }
 
     class RegisterClientChannelEventProcess extends ChannelEventAdapter {
@@ -204,10 +204,10 @@ public class DefaultRegisterClient {
                     register(registerMeta);
                 }
             }
-            ConcurrentSet<ServiceMeta> consumers = registerService.getConsumersServiceMetas();
+            ConcurrentSet<SubscribeMeta> consumers = registerService.getConsumersServiceMetas();
             if (Collections.isEmpty(consumers)) {
-                for (ServiceMeta serviceMeta : consumers) {
-                    subscribe(serviceMeta);
+                for (SubscribeMeta subscribeMeta : consumers) {
+                    subscribe(subscribeMeta);
                 }
             }
         }
