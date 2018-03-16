@@ -124,35 +124,35 @@ public class SpringReferenceBean<T> implements FactoryBean<T>, InitializingBean 
 
     public void setLoadBalancerType(String loadBalancerType) {
         this.loadBalancerType = LoadBalancerType.parse(loadBalancerType);
-        if (loadBalancerType == null) {
+        if (this.loadBalancerType == null) {
             throw new IllegalArgumentException("loadBalancerType:" + loadBalancerType);
         }
     }
 
     public void setStrategy(String strategy) {
         this.strategy = ClusterInvoker.Strategy.parse(strategy);
-        if (strategy == null) {
+        if (this.strategy == null) {
             throw new IllegalArgumentException("strategy:" + strategy);
         }
     }
 
     public void setInvokeType(String invokeType) {
         this.invokeType = InvokeType.parse(invokeType);
-        if (invokeType == null) {
+        if (this.invokeType == null) {
             throw new IllegalArgumentException("invokeType" + invokeType);
         }
     }
 
     public void setSerializerType(String serializerType) {
         this.serializerType = SerializerType.parse(serializerType);
-        if (serializerType == null) {
+        if (this.serializerType == null) {
             throw new IllegalArgumentException("serializerType" + serializerType);
         }
     }
 
     public void setDispatchType(String dispatchType) {
         this.dispatchType = DispatchType.parse(dispatchType);
-        if (dispatchType == null) {
+        if (this.dispatchType == null) {
             throw new IllegalArgumentException("dispatchType" + dispatchType);
         }
     }

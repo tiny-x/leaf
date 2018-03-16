@@ -1,7 +1,7 @@
 package com.leaf.spring.init.bean;
 
 import com.google.common.base.Strings;
-import com.leaf.remoting.netty.NettyServerConfig;
+import com.leaf.register.api.RegisterType;
 import com.leaf.rpc.provider.DefaultProvider;
 import com.leaf.rpc.provider.Provider;
 import org.springframework.beans.factory.InitializingBean;
@@ -9,6 +9,8 @@ import org.springframework.beans.factory.InitializingBean;
 public class SpringProvider implements InitializingBean {
 
     private Integer port;
+
+    private RegisterType registerType;
 
     private String registryServer;
 
@@ -20,11 +22,7 @@ public class SpringProvider implements InitializingBean {
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        NettyServerConfig config = new NettyServerConfig();
-        if (port != null) {
-            config.setPort(this.port);
-        }
-        provider = new DefaultProvider(config);
+        provider = new DefaultProvider(port, registerType);
         if (!Strings.isNullOrEmpty(registryServer)) {
             provider.connectToRegistryServer(registryServer);
         }
@@ -49,5 +47,12 @@ public class SpringProvider implements InitializingBean {
 
     public Provider getProvider() {
         return provider;
+    }
+
+    public void setRegisterType(String registerType) {
+        this.registerType = RegisterType.parse(registerType);
+        if (this.registerType == null) {
+            throw new IllegalArgumentException("registerType:" + registerType);
+        }
     }
 }

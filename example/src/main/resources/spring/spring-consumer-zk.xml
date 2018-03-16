@@ -6,8 +6,8 @@
        https://github.com/mountain-giant
        https://github.com/mountain-giant/leaf.xsd">
 
-    <leaf:consumer id="consumer" registerType="DEFAULT">
-        <leaf:property registryServer="127.0.0.1:9876"/>
+    <leaf:consumer id="consumer" registerType="ZOOKEEPER">
+        <leaf:property registryServer="127.0.0.1:2181"/>
     </leaf:consumer>
 
     <leaf:reference id="helloService" consumer="consumer" interfaceClass="com.leaf.example.spring.HelloService">

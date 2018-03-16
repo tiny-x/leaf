@@ -1,4 +1,4 @@
-package com.leaf.common;
+package com.leaf.remoting.api;
 
 
 /**
@@ -16,36 +16,42 @@ public class ProtocolHead {
 
     public static final int HEADER_SIZE = 16;
 
-    // ====== messageCode 奇数 request 偶数 response
-    public static final byte REQUEST = 0x01;     // rpc request
-    public static final byte RESPONSE = 0x02;     // rpc response
-
-    public static final byte REGISTER_SERVICE = 0x03;     // 注册服务
-    public static final byte ACK = 0x04;
-
-    public static final byte SUBSCRIBE_SERVICE = 0x05;    // 监听服务
-    public static final byte SUBSCRIBE_RECEIVE = 0x06;    // 监听服务
-
-    public static final byte OFFLINE_SERVICE = 0x07;  // 服务端下线
-
-    public static final byte CANCEL_REGISTER_SERVICE = 0x09;  // 取消注册服务
-
-    public static final byte ONEWAY_REQUEST = 0x0B;  // 单向调用
-
-    public static final byte LOOKUP_SERVICE = 0x0D;  // 查找服务
-
-    public static final byte HEARTBEAT = 0x0F;
-
-    // ====== serializerCode
-    public static final byte PROTO_STUFF = 0x01;
-    public static final byte JSON = 0x02;
-
     public static final short MAGIC = (short) (0xcaff);
 
     /**
-     * 消息类型（高四位），序列化方式（低四位）
+     * messageType 1bit
+     *
+     */
+    public static final byte REQUEST =      0x00;
+    public static final byte RESPONSE =     0x01;
+
+    /**
+     * messageCode 4bit 0x00~0x00
+     */
+    public static final byte HEARTBEAT =                0x00;   // 心跳包
+    public static final byte RPC_REQUEST =              0x01;   // rpc request
+    public static final byte PRC_RESPONSE =             0x02;   // rpc response
+    public static final byte REGISTER_SERVICE =         0x03;   // 注册服务
+    public static final byte ACK =                      0x04;   // ack
+    public static final byte SUBSCRIBE_SERVICE =        0x05;   // 监听服务
+    public static final byte SUBSCRIBE_RECEIVE =        0x06;   // 监听服务
+    public static final byte OFFLINE_SERVICE =          0x07;   // 服务端下线
+    public static final byte CANCEL_REGISTER_SERVICE =  0x09;   // 取消注册服务
+    public static final byte ONEWAY_REQUEST =           0x0A;   // 单向调用
+    public static final byte LOOKUP_SERVICE =           0x0B;   // 查找服务
+
+    /**
+     * serializerCode 3bit
+     */
+    public static final byte PROTO_STUFF =              0x00;
+    public static final byte JSON =                     0x01;
+
+    /**
+     * 消息类型（高一位） 消息标识（高四位），序列化方式（低三位）
      */
     private byte sign;
+
+    private byte messageType;
 
     private byte messageCode;
 
@@ -61,17 +67,17 @@ public class ProtocolHead {
 
     }
 
-    public static byte toSign(byte messageCode, byte serializerCode) {
-        return (byte) ((messageCode << 4) | serializerCode);
+    public static byte toSign(byte messageType, byte messageCode, byte serializerCode) {
+        return (byte) (
+                (messageType << 7) | (messageCode << 3) | (serializerCode >> 1)
+        );
     }
 
     public void setSign(byte sign) {
-        this.messageCode = (byte) ((sign & 0xF0) >> 4);
-        this.serializerCode = (byte) (sign & 0x0F);
-    }
-
-    public byte getSign(byte sign) {
-        return sign;
+        this.sign = sign;
+        this.messageType = (byte) ((sign & 0x80) >> 7);
+        this.messageCode = (byte) ((sign & 0x78) >> 3);
+        this.serializerCode = (byte) (sign & 0x07);
     }
 
     public byte getStatus() {
@@ -106,4 +112,7 @@ public class ProtocolHead {
         return serializerCode;
     }
 
+    public byte getMessageType() {
+        return messageType;
+    }
 }

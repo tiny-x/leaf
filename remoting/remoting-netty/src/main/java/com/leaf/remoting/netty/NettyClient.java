@@ -1,40 +1,33 @@
 package com.leaf.remoting.netty;
 
-import com.leaf.common.ProtocolHead;
-import com.leaf.remoting.api.*;
-import com.leaf.remoting.api.exception.RemotingConnectException;
-import com.leaf.remoting.api.exception.RemotingConnectTimeoutException;
-import com.leaf.remoting.api.exception.RemotingException;
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.model.Directory;
 import com.leaf.common.utils.Collections;
 import com.leaf.common.utils.Maps;
+import com.leaf.remoting.api.*;
 import com.leaf.remoting.api.channel.ChannelGroup;
 import com.leaf.remoting.api.channel.DirectoryChannelGroup;
-import com.leaf.remoting.api.payload.ByteHolder;
+import com.leaf.remoting.api.exception.RemotingConnectException;
+import com.leaf.remoting.api.exception.RemotingConnectTimeoutException;
+import com.leaf.remoting.api.exception.RemotingException;
 import com.leaf.remoting.api.payload.RequestCommand;
 import com.leaf.remoting.api.payload.ResponseCommand;
 import com.leaf.remoting.channel.NettyChannelGroup;
 import com.leaf.remoting.netty.event.ChannelEvent;
-import com.leaf.remoting.netty.event.ChannelEventType;
+import com.leaf.remoting.netty.handler.client.NettyClientHandler;
+import com.leaf.remoting.netty.handler.client.NettyConnectManageHandler;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.buffer.ByteBuf;
-import io.netty.buffer.Unpooled;
-import io.netty.channel.*;
+import io.netty.channel.Channel;
+import io.netty.channel.ChannelFuture;
+import io.netty.channel.ChannelInitializer;
+import io.netty.channel.ChannelOption;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioSocketChannel;
-import io.netty.handler.timeout.IdleState;
-import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
-import io.netty.util.HashedWheelTimer;
-import io.netty.util.Timeout;
-import io.netty.util.Timer;
-import io.netty.util.TimerTask;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.net.SocketAddress;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -50,7 +43,7 @@ public class NettyClient extends NettyServiceAbstract implements RemotingClient 
 
     private final NettyEncoder encoder = new NettyEncoder();
 
-    private final NettyConnectManageHandler nettyConnectManageHandler = new NettyConnectManageHandler();
+    private final NettyConnectManageHandler nettyConnectManageHandler;
 
     private final NioEventLoopGroup nioEventLoopGroupWorker = new NioEventLoopGroup();
 
@@ -68,8 +61,6 @@ public class NettyClient extends NettyServiceAbstract implements RemotingClient 
 
     private final ConcurrentMap<UnresolvedAddress, CopyOnWriteArrayList<Connector>> connectorsMap = Maps.newConcurrentMap();
 
-    private volatile boolean needReconnect = true;
-
     public NettyClient(NettyClientConfig config) {
         this(config, null);
     }
@@ -78,6 +69,7 @@ public class NettyClient extends NettyServiceAbstract implements RemotingClient 
         super(config.getClientAsyncSemaphoreValue(), config.getClientOnewaySemaphoreValue());
         this.config = config;
         this.channelEventListener = listener;
+        this.nettyConnectManageHandler = new NettyConnectManageHandler(this);
 
         this.publicExecutorService = Executors.newFixedThreadPool(AVAILABLE_PROCESSORS, new ThreadFactory() {
 
@@ -95,7 +87,7 @@ public class NettyClient extends NettyServiceAbstract implements RemotingClient 
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r);
-                thread.setName("SCAN#RESPONSE#TABLE");
+                thread.setName("SCAN#PRC_RESPONSE#TABLE");
                 return thread;
             }
         });
@@ -122,7 +114,9 @@ public class NettyClient extends NettyServiceAbstract implements RemotingClient 
                 connectors.add(connector);
 
                 // 连接成功 添加channel到channelGroup
-                future.channel().pipeline().addLast(new NettyClientHandler(connector));
+                future.channel().pipeline()
+                        .addLast(new NettyClientHandler(connector, bootstrap, this));
+
                 group(address).addChannel(future.channel());
                 logger.info("connect with: {}", future.channel());
 
@@ -279,12 +273,12 @@ public class NettyClient extends NettyServiceAbstract implements RemotingClient 
         }
     }
 
-    private void putChannelEvent(ChannelEvent channelEvent) {
+    public void putChannelEvent(ChannelEvent channelEvent) {
         this.channelEventExecutor.putChannelEvent(channelEvent);
     }
 
     @Override
-    protected ChannelEventListener getChannelEventListener() {
+    public ChannelEventListener getChannelEventListener() {
         return this.channelEventListener;
     }
 
@@ -314,161 +308,4 @@ public class NettyClient extends NettyServiceAbstract implements RemotingClient 
             logger.error("netty client shutdown gracefully error!", e);
         }
     }
-
-    @ChannelHandler.Sharable
-    class NettyClientHandler extends SimpleChannelInboundHandler<ByteHolder> implements TimerTask {
-
-        private Timer timer = new HashedWheelTimer();
-
-        private Connector connector;
-
-        private int reties;
-
-        public NettyClientHandler(Connector connector) {
-            this.connector = connector;
-        }
-
-        @Override
-        public void channelActive(ChannelHandlerContext ctx) throws Exception {
-            reties = 0;
-            group(connector.getAddress()).addChannel(ctx.channel());
-            logger.info("reconnect with: {}", ctx.channel());
-            super.channelActive(ctx);
-        }
-
-        @Override
-        protected void channelRead0(ChannelHandlerContext ctx, ByteHolder msg) throws Exception {
-            processMessageReceived(ctx, msg);
-        }
-
-        @Override
-        public void channelInactive(ChannelHandlerContext ctx) throws Exception {
-            if (connector.isNeedReconnect()) {
-                if (reties < 10) {
-                    reties++;
-                }
-                timer.newTimeout(this, 2 << reties, TimeUnit.SECONDS);
-            }
-            super.channelInactive(ctx);
-        }
-
-        @Override
-        public void run(Timeout timeout) throws Exception {
-            if (!connector.isNeedReconnect()) {
-                logger.warn("Cancel reconnecting with {}.", connector.getAddress());
-                return;
-            }
-            reconnect();
-        }
-
-        private void reconnect() {
-            UnresolvedAddress address = connector.getAddress();
-
-            bootstrap.connect(address.getHost(), address.getPort())
-                    .addListener(new ChannelFutureListener() {
-                        @Override
-                        public void operationComplete(ChannelFuture future) throws Exception {
-                            future.channel().pipeline().addLast(NettyClientHandler.this);
-                            boolean isSuccess = future.isSuccess();
-                            logger.warn("Reconnects with {}, {}.", address, isSuccess ? "succeed" : "failed");
-                            if (!isSuccess) {
-                                future.channel().pipeline().fireChannelInactive();
-                            } else {
-                                group(address).addChannel(future.channel());
-                            }
-                        }
-                    });
-        }
-    }
-
-    @ChannelHandler.Sharable
-    class NettyConnectManageHandler extends ChannelDuplexHandler {
-        @Override
-        public void connect(ChannelHandlerContext ctx, SocketAddress remoteAddress, SocketAddress localAddress,
-                            ChannelPromise promise) throws Exception {
-            final String local = localAddress == null ? "UNKNOWN" : localAddress.toString();
-            final String remote = remoteAddress == null ? "UNKNOWN" : remoteAddress.toString();
-            logger.debug("NETTY CLIENT PIPELINE: CONNECT  {} => {}", local, remote);
-
-            super.connect(ctx, remoteAddress, localAddress, promise);
-
-            if (NettyClient.this.channelEventListener != null) {
-                NettyClient.this.putChannelEvent(new ChannelEvent(ChannelEventType.CONNECT, remote, ctx.channel()));
-            }
-        }
-
-        @Override
-        public void channelActive(ChannelHandlerContext ctx) throws Exception {
-            final String remoteAddress = ctx.channel().remoteAddress().toString();
-            logger.debug("NETTY SERVER PIPELINE: channelActive, the channel[{}]", remoteAddress);
-            super.channelActive(ctx);
-
-            if (NettyClient.this.channelEventListener != null) {
-                NettyClient.this.putChannelEvent(new ChannelEvent(ChannelEventType.ACTIVE, remoteAddress, ctx.channel()));
-            }
-        }
-
-        @Override
-        public void disconnect(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-            final String remoteAddress = ctx.channel().remoteAddress().toString();
-            logger.debug("NETTY CLIENT PIPELINE: DISCONNECT {}", remoteAddress);
-            ctx.channel().close();
-            super.disconnect(ctx, promise);
-
-            if (NettyClient.this.channelEventListener != null) {
-                NettyClient.this.putChannelEvent(new ChannelEvent(ChannelEventType.CLOSE, remoteAddress, ctx.channel()));
-            }
-        }
-
-        @Override
-        public void close(ChannelHandlerContext ctx, ChannelPromise promise) throws Exception {
-            final String remoteAddress = ctx.channel().remoteAddress().toString();
-            logger.debug("NETTY CLIENT PIPELINE: CLOSE {}", remoteAddress);
-            super.close(ctx, promise);
-
-            if (NettyClient.this.channelEventListener != null) {
-                NettyClient.this.putChannelEvent(new ChannelEvent(ChannelEventType.CLOSE, remoteAddress, ctx.channel()));
-            }
-        }
-
-        @Override
-        public void userEventTriggered(ChannelHandlerContext ctx, Object evt) throws Exception {
-            if (evt instanceof IdleStateEvent) {
-                IdleStateEvent event = (IdleStateEvent) evt;
-                final String remoteAddress = ctx.channel().remoteAddress().toString();
-                switch (event.state()) {
-                    case ALL_IDLE:
-                        if (NettyClient.this.channelEventListener != null) {
-                            NettyClient.this.putChannelEvent(new ChannelEvent(ChannelEventType.ALL_IDLE, remoteAddress, ctx.channel()));
-                        }
-                        break;
-                    case WRITER_IDLE:
-                        if (NettyClient.this.channelEventListener != null) {
-                            NettyClient.this.putChannelEvent(new ChannelEvent(ChannelEventType.WRITE_IDLE, remoteAddress, ctx.channel()));
-                        }
-                        ctx.channel().writeAndFlush(Heartbeats.heartbeatContent()).addListener(new ChannelFutureListener() {
-                            @Override
-                            public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                                logger.debug("channel write idle , send heartbeat, isSuccess:{}", channelFuture.isSuccess());
-                            }
-                        });
-                        break;
-                }
-            }
-            ctx.fireUserEventTriggered(evt);
-        }
-
-        @Override
-        public void exceptionCaught(ChannelHandlerContext ctx, Throwable cause) throws Exception {
-            final String remoteAddress = ctx.channel().remoteAddress().toString();
-            logger.warn("NETTY CLIENT PIPELINE: exceptionCaught {}", remoteAddress);
-            logger.error(cause.getMessage(), cause);
-            ctx.channel().close();
-
-            if (NettyClient.this.channelEventListener != null) {
-                NettyClient.this.putChannelEvent(new ChannelEvent(ChannelEventType.EXCEPTION, remoteAddress, ctx.channel()));
-            }
-        }
-    }
-
 }

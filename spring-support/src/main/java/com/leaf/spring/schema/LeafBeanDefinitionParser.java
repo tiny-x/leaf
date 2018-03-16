@@ -74,6 +74,7 @@ public class LeafBeanDefinitionParser implements BeanDefinitionParser {
         definition.setBeanClass(aClass);
 
         addProperty(definition, element, "id", true);
+        addProperty(definition, element, "registerType", true);
 
         NodeList childNodes = element.getChildNodes();
         for (int i = 0; i < childNodes.getLength(); i++) {
@@ -116,6 +117,8 @@ public class LeafBeanDefinitionParser implements BeanDefinitionParser {
     private BeanDefinition parseProvider(Element element, ParserContext parserContext) {
         GenericBeanDefinition definition = new GenericBeanDefinition();
         definition.setBeanClass(aClass);
+
+        addProperty(definition, element, "registerType", true);
 
         NodeList childNodes = element.getChildNodes();
         for (int i = 0; i < childNodes.getLength(); i++) {

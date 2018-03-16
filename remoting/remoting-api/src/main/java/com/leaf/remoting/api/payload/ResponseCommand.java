@@ -1,6 +1,6 @@
 package com.leaf.remoting.api.payload;
 
-import com.leaf.common.ProtocolHead;
+import com.leaf.remoting.api.ProtocolHead;
 import com.leaf.remoting.api.ResponseStatus;
 
 public class ResponseCommand extends ByteHolder {
@@ -13,7 +13,7 @@ public class ResponseCommand extends ByteHolder {
     private long invokeId;
 
     public ResponseCommand(byte serializerCode, byte[] body, long invokeId) {
-        this(ProtocolHead.RESPONSE, serializerCode, body, invokeId);
+        this(ProtocolHead.PRC_RESPONSE, serializerCode, body, invokeId);
     }
 
     public ResponseCommand(byte messageCode, byte serializerCode, byte[] body, long invokeId) {

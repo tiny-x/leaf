@@ -1,6 +1,6 @@
 package com.leaf.remoting.api.payload;
 
-import com.leaf.common.ProtocolHead;
+import com.leaf.remoting.api.ProtocolHead;
 import com.leaf.common.utils.AnyThrow;
 
 import java.util.concurrent.atomic.AtomicLong;
@@ -14,7 +14,7 @@ public class RequestCommand extends ByteHolder implements Cloneable {
     private long invokeId;
 
     public RequestCommand(byte serializerCode, byte[] body) {
-        this(ProtocolHead.REQUEST, serializerCode, body);
+        this(ProtocolHead.RPC_REQUEST, serializerCode, body);
     }
 
     public RequestCommand(byte messageCode, byte serializerCode, byte[] body) {

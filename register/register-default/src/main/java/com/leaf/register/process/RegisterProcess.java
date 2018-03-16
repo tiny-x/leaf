@@ -1,6 +1,6 @@
 package com.leaf.register.process;
 
-import com.leaf.common.ProtocolHead;
+import com.leaf.remoting.api.ProtocolHead;
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.concurrent.ConcurrentSet;
 import com.leaf.common.constants.Constants;
@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 import java.util.*;
 import java.util.concurrent.*;
 
-import static com.leaf.common.ProtocolHead.*;
+import static com.leaf.remoting.api.ProtocolHead.*;
 
 public class RegisterProcess implements RequestProcessor {
 

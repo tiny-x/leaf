@@ -78,7 +78,7 @@ public class NettyServer extends NettyServiceAbstract implements RemotingServer 
             @Override
             public Thread newThread(Runnable r) {
                 Thread thread = new Thread(r);
-                thread.setName("SCAN#RESPONSE#TABLE");
+                thread.setName("SCAN#PRC_RESPONSE#TABLE");
                 return thread;
             }
         });

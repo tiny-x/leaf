@@ -1,6 +1,6 @@
 package com.leaf.remoting;
 
-import com.leaf.common.ProtocolHead;
+import com.leaf.remoting.api.ProtocolHead;
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.remoting.api.RemotingCommandFactory;
 import com.leaf.remoting.api.RequestProcessor;
@@ -55,7 +55,7 @@ public class RemotingServerTest {
             }
         }, Executors.newCachedThreadPool());
 
-        RequestCommand request = new RequestCommand(ProtocolHead.REQUEST, ProtocolHead.PROTO_STUFF, "hello register".getBytes());
+        RequestCommand request = new RequestCommand(ProtocolHead.RPC_REQUEST, ProtocolHead.PROTO_STUFF, "hello register".getBytes());
         UnresolvedAddress address = new UnresolvedAddress("127.0.0.1", 9180);
         rpcClient.connect(address);
 
@@ -88,7 +88,7 @@ public class RemotingServerTest {
             }
         }, Executors.newCachedThreadPool());
 
-        RequestCommand request = new RequestCommand(ProtocolHead.REQUEST, ProtocolHead.PROTO_STUFF, "hello register".getBytes());
+        RequestCommand request = new RequestCommand(ProtocolHead.RPC_REQUEST, ProtocolHead.PROTO_STUFF, "hello register".getBytes());
 
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         UnresolvedAddress address = new UnresolvedAddress("127.0.0.1", 9180);

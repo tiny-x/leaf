@@ -1,6 +1,6 @@
 package com.leaf.remoting.netty;
 
-import com.leaf.common.ProtocolHead;
+import com.leaf.remoting.api.ProtocolHead;
 import com.leaf.remoting.api.RemotingCommandFactory;
 import com.leaf.remoting.api.payload.RequestCommand;
 import com.leaf.remoting.api.payload.ResponseCommand;
@@ -37,31 +37,32 @@ public class NettyDecoder extends ReplayingDecoder<NettyDecoder.State> {
                 head.setBodyLength(in.readInt());
                 checkpoint(State.BODY);
             case BODY:
-                if (head.getMessageCode() != ProtocolHead.HEARTBEAT) {
-                    boolean isRequest = ((head.getMessageCode() % 2) == 1);
-                    if (isRequest) {
-                        byte[] body = new byte[head.getBodyLength()];
-                        in.readBytes(body);
+                byte[] body = new byte[head.getBodyLength()];
+                in.readBytes(body);
+                switch (head.getMessageType()) {
+                    case ProtocolHead.REQUEST: {
+                        if (head.getMessageCode() == ProtocolHead.HEARTBEAT)
+                            break;
+
                         RequestCommand requestCommand = RemotingCommandFactory.createRequestCommand(
                                 head.getMessageCode(),
                                 head.getSerializerCode(),
                                 body,
                                 head.getInvokeId()
                         );
-
                         out.add(requestCommand);
-                    } else {
-                        byte[] body = new byte[head.getBodyLength()];
-                        in.readBytes(body);
+                        break;
+                    }
+                    case ProtocolHead.RESPONSE: {
                         ResponseCommand responseCommand = RemotingCommandFactory.createResponseCommand(
                                 head.getMessageCode(),
                                 head.getSerializerCode(),
                                 body,
                                 head.getInvokeId()
                         );
-
                         responseCommand.setStatus(head.getStatus());
                         out.add(responseCommand);
+                        break;
                     }
                 }
                 checkpoint(State.HEADER_MAGIC);

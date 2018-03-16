@@ -1,6 +1,6 @@
 package com.leaf.remoting.netty;
 
-import com.leaf.common.ProtocolHead;
+import com.leaf.remoting.api.ProtocolHead;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 

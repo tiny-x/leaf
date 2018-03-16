@@ -1,18 +1,18 @@
 package com.leaf.serialization.api;
 
 public enum SerializerType {
-    PROTO_STUFF ((byte) 0x01),
-    HESSIAN     ((byte) 0x02),
-    KRYO        ((byte) 0x03),
-    JAVA        ((byte) 0x04)
+    PROTO_STUFF ((byte) 0x00),
+    HESSIAN     ((byte) 0x01),
+    KRYO        ((byte) 0x02),
+    JAVA        ((byte) 0x03)
     // ...
     ;
 
     SerializerType(byte value) {
-        if (0x00 < value && value < 0x10) {
+        if (0x00 <= value && value <= 0x07) {
             this.value = value;
         } else {
-            throw new IllegalArgumentException("out of range(0x01 ~ 0x0f): " + value);
+            throw new IllegalArgumentException("out of range(0x00 ~ 0x07): " + value);
         }
     }
 

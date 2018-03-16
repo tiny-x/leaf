@@ -1,6 +1,6 @@
 package com.leaf.rpc.provider.process;
 
-import com.leaf.common.ProtocolHead;
+import com.leaf.remoting.api.ProtocolHead;
 import com.leaf.remoting.api.RequestWrapper;
 import com.leaf.remoting.api.ResponseWrapper;
 import com.leaf.rpc.local.ServiceWrapper;
@@ -36,7 +36,7 @@ public class DefaultProviderProcessor implements RequestProcessor {
     public ResponseCommand process(ChannelHandlerContext context, RequestCommand request) {
         Serializer serializer = SerializerFactory.serializer(SerializerType.parse(request.getSerializerCode()));
         switch (request.getMessageCode()) {
-            case ProtocolHead.REQUEST: {
+            case ProtocolHead.RPC_REQUEST: {
             }
             case ProtocolHead.ONEWAY_REQUEST: {
                 RequestWrapper requestWrapper = serializer.deserialize(request.getBody(), RequestWrapper.class);

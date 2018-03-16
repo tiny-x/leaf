@@ -1,6 +1,6 @@
 package com.leaf.rpc.consumer.dispatcher;
 
-import com.leaf.common.ProtocolHead;
+import com.leaf.remoting.api.ProtocolHead;
 import com.leaf.remoting.api.RequestWrapper;
 import com.leaf.remoting.api.channel.ChannelGroup;
 import com.leaf.remoting.api.payload.RequestCommand;
@@ -28,7 +28,7 @@ public class DefaultRoundDispatcher extends AbstractDispatcher {
         Serializer serializer = getSerializer();
 
         byte[] bytes = serializer.serialize(requestWrapper);
-        RequestCommand requestCommand = new RequestCommand(ProtocolHead.REQUEST, getSerializerCode(), bytes);
+        RequestCommand requestCommand = new RequestCommand(ProtocolHead.RPC_REQUEST, getSerializerCode(), bytes);
 
         InvokeFuture<T> invoke = invoke(requestCommand, DispatchType.ROUND, returnType, invokeType, channelGroup);
 
