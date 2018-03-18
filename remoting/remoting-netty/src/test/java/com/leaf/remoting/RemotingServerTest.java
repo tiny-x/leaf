@@ -12,6 +12,7 @@ import com.leaf.remoting.netty.NettyClient;
 import com.leaf.remoting.netty.NettyClientConfig;
 import com.leaf.remoting.netty.NettyServer;
 import com.leaf.remoting.netty.NettyServerConfig;
+import com.leaf.serialization.api.SerializerType;
 import io.netty.channel.ChannelHandlerContext;
 import org.junit.Before;
 import org.junit.Test;
@@ -55,7 +56,7 @@ public class RemotingServerTest {
             }
         }, Executors.newCachedThreadPool());
 
-        RequestCommand request = new RequestCommand(ProtocolHead.RPC_REQUEST, ProtocolHead.PROTO_STUFF, "hello register".getBytes());
+        RequestCommand request = new RequestCommand(ProtocolHead.RPC_REQUEST, SerializerType.PROTO_STUFF.value(), "hello register".getBytes());
         UnresolvedAddress address = new UnresolvedAddress("127.0.0.1", 9180);
         rpcClient.connect(address);
 
@@ -88,7 +89,7 @@ public class RemotingServerTest {
             }
         }, Executors.newCachedThreadPool());
 
-        RequestCommand request = new RequestCommand(ProtocolHead.RPC_REQUEST, ProtocolHead.PROTO_STUFF, "hello register".getBytes());
+        RequestCommand request = new RequestCommand(ProtocolHead.RPC_REQUEST, SerializerType.PROTO_STUFF.value(), "hello register".getBytes());
 
         final CountDownLatch countDownLatch = new CountDownLatch(1);
         UnresolvedAddress address = new UnresolvedAddress("127.0.0.1", 9180);

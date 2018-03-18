@@ -6,20 +6,15 @@ import io.protostuff.LinkedBuffer;
 import io.protostuff.ProtostuffIOUtil;
 import io.protostuff.Schema;
 import io.protostuff.runtime.RuntimeSchema;
-import org.objenesis.Objenesis;
-import org.objenesis.ObjenesisStd;
-
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
 
 public class ProtoStuffSerializer implements Serializer {
 
-    private static Map<Class<?>, Schema<?>> cachedSchema = new ConcurrentHashMap<>();
-
-    private static Objenesis objenesis = new ObjenesisStd(true);
-
-    public ProtoStuffSerializer() {
-    }
+    private static final ThreadLocal<LinkedBuffer> bufThreadLocal = new ThreadLocal<LinkedBuffer>() {
+        @Override
+        protected LinkedBuffer initialValue() {
+            return LinkedBuffer.allocate(LinkedBuffer.DEFAULT_BUFFER_SIZE);
+        }
+    };
 
     @Override
     public SerializerType serializerType() {
@@ -35,10 +30,9 @@ public class ProtoStuffSerializer implements Serializer {
      */
     @SuppressWarnings("unchecked")
     public <T> byte[] serialize(T object) {
-        Class<T> cls = (Class<T>) object.getClass();
-        LinkedBuffer buffer = LinkedBuffer.allocate(LinkedBuffer.DEFAULT_BUFFER_SIZE);
+        LinkedBuffer buffer = bufThreadLocal.get();
         try {
-            Schema<T> schema = getSchema(cls);
+            Schema<T> schema = RuntimeSchema.getSchema((Class<T>) object.getClass());
             return ProtostuffIOUtil.toByteArray(object, schema, buffer);
         } catch (Exception e) {
             throw new IllegalStateException(e.getMessage(), e);
@@ -56,8 +50,8 @@ public class ProtoStuffSerializer implements Serializer {
      */
     public <T> T deserialize(byte[] data, Class<T> clazz) {
         try {
-            T message = objenesis.newInstance(clazz);
-            Schema<T> schema = getSchema(clazz);
+            Schema<T> schema = RuntimeSchema.getSchema(clazz);
+            T message = schema.newMessage();
             ProtostuffIOUtil.mergeFrom(data, message, schema);
             return message;
         } catch (Exception e) {
@@ -65,13 +59,4 @@ public class ProtoStuffSerializer implements Serializer {
         }
     }
 
-    @SuppressWarnings("unchecked")
-    private static <T> Schema<T> getSchema(Class<T> cls) {
-        Schema<T> schema = (Schema<T>) cachedSchema.get(cls);
-        if (schema == null) {
-            schema = RuntimeSchema.createFrom(cls);
-            cachedSchema.put(cls, schema);
-        }
-        return schema;
-    }
 }

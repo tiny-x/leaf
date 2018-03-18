@@ -43,7 +43,6 @@ public class NettyDecoder extends ReplayingDecoder<NettyDecoder.State> {
                     case ProtocolHead.REQUEST: {
                         if (head.getMessageCode() == ProtocolHead.HEARTBEAT)
                             break;
-
                         RequestCommand requestCommand = RemotingCommandFactory.createRequestCommand(
                                 head.getMessageCode(),
                                 head.getSerializerCode(),

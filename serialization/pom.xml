@@ -14,7 +14,9 @@
     <modules>
         <module>serialization-protostuff</module>
         <module>serialization-api</module>
+        <module>serialization-java</module>
+        <module>serialization-hessian</module>
+        <module>serialization-json</module>
     </modules>
-
 
 </project>

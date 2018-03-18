@@ -11,5 +11,10 @@
 
     <artifactId>serialization-api</artifactId>
 
-
+    <dependencies>
+        <dependency>
+            <groupId>com.leaf-rpc</groupId>
+            <artifactId>common</artifactId>
+        </dependency>
+    </dependencies>
 </project>

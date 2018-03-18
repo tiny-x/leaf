@@ -43,8 +43,7 @@ public class ProtocolHead {
     /**
      * serializerCode 3bit
      */
-    public static final byte PROTO_STUFF =              0x00;
-    public static final byte JSON =                     0x01;
+    private byte serializerCode;
 
     /**
      * 消息类型（高一位） 消息标识（高四位），序列化方式（低三位）
@@ -54,8 +53,6 @@ public class ProtocolHead {
     private byte messageType;
 
     private byte messageCode;
-
-    private byte serializerCode;
 
     private byte status;
 
