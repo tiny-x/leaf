@@ -44,7 +44,7 @@
 
         <dependency>
             <groupId>com.leaf-rpc</groupId>
-            <artifactId>seralization-hessian</artifactId>
+            <artifactId>serialization-hessian</artifactId>
         </dependency>
 
         <dependency>

@@ -63,7 +63,7 @@
             </dependency>
             <dependency>
                 <groupId>com.leaf-rpc</groupId>
-                <artifactId>seralization-hessian</artifactId>
+                <artifactId>serialization-hessian</artifactId>
                 <version>1.0.0</version>
             </dependency>
             <dependency>
