@@ -28,7 +28,7 @@ public interface HelloService {
 ````
 ##### 2、服务端配置
 ```` xml
-<bean id="helloService" class="com.leaf.example.spring.HelloServiceImpl"/>
+    <bean id="helloService" class="com.leaf.example.spring.HelloServiceImpl"/>
 
     <leaf:provider id="provider" registerType="DEFAULT">
         <leaf:property port="9180" />
@@ -47,7 +47,7 @@ public interface HelloService {
 ````
 ##### 3、客户端配置
 ```` xml
-<leaf:consumer id="consumer" registerType="DEFAULT">
+    <leaf:consumer id="consumer" registerType="DEFAULT">
         <leaf:property registryServer="127.0.0.1:9876"/>
     </leaf:consumer>
 
