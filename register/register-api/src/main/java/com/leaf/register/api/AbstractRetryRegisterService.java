@@ -47,4 +47,7 @@ public abstract class AbstractRetryRegisterService implements RegisterService {
     protected abstract void doUnRegister(RegisterMeta registerMeta);
 
     protected abstract void doSubscribe(SubscribeMeta serviceMeta);
+
+    protected abstract void doSubscribeGroup();
+
 }

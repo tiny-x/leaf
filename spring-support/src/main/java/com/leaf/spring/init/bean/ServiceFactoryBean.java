@@ -7,9 +7,9 @@ import org.springframework.beans.factory.InitializingBean;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class SpringServiceBean implements InitializingBean {
+public class ServiceFactoryBean implements InitializingBean {
 
-    private SpringProvider provider;
+    private ProviderFactoryBean provider;
 
     private int weight;
 
@@ -29,6 +29,8 @@ public class SpringServiceBean implements InitializingBean {
     public void afterPropertiesSet() throws Exception {
         checkNotNull(provider, "provider");
         Provider _provider = provider.getProvider();
+        if (group == null)
+            group = provider.getGroup();
 
         ServiceRegistry serviceRegistry = _provider.serviceRegistry()
                 .provider(ref)
@@ -63,7 +65,7 @@ public class SpringServiceBean implements InitializingBean {
         this.ref = ref;
     }
 
-    public void setProvider(SpringProvider provider) {
+    public void setProvider(ProviderFactoryBean provider) {
         this.provider = provider;
     }
 
@@ -74,4 +76,5 @@ public class SpringServiceBean implements InitializingBean {
     public void setWeight(int weight) {
         this.weight = weight;
     }
+
 }

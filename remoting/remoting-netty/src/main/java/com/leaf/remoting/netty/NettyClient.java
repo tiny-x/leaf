@@ -294,18 +294,14 @@ public class NettyClient extends NettyServiceAbstract implements RemotingClient 
 
     @Override
     public void shutdownGracefully() {
-        try {
-            if (nioEventLoopGroupWorker != null) {
-                nioEventLoopGroupWorker.shutdownGracefully();
-            }
-            if (publicExecutorService != null) {
-                publicExecutorService.shutdown();
-            }
-            if (scanResponseTableExecutorService != null) {
-                scanResponseTableExecutorService.shutdown();
-            }
-        } catch (Exception e) {
-            logger.error("netty client shutdown gracefully error!", e);
+        nioEventLoopGroupWorker.shutdownGracefully().syncUninterruptibly();
+
+        if (publicExecutorService != null) {
+            publicExecutorService.shutdown();
         }
+        if (scanResponseTableExecutorService != null) {
+            scanResponseTableExecutorService.shutdown();
+        }
+
     }
 }

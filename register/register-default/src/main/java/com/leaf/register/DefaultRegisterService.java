@@ -69,6 +69,11 @@ public class DefaultRegisterService extends AbstractRegisterService implements R
     }
 
     @Override
+    protected void doSubscribeGroup() {
+
+    }
+
+    @Override
     public RegisterType registerType() {
         return RegisterType.DEFAULT;
     }

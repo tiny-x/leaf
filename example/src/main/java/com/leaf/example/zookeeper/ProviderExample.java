@@ -32,7 +32,7 @@ public class ProviderExample {
                     ServiceWrapper serviceWrapper = provider.serviceRegistry()
                             .provider(helloService)
                             .register();
-                    provider.connectToRegistryServer("127.0.0.1:2181");
+                    provider.connectToRegistryServer("zookeeper.dev.xianglin.com");
                     provider.publishService(serviceWrapper);
                     countDownLatch.countDown();
                 }

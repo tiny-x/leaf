@@ -70,6 +70,11 @@ public class DefaultConsumer implements Consumer {
     }
 
     @Override
+    public void subscribeGroup(NotifyListener listener) {
+        registerService.subscribeGroup(listener);
+    }
+
+    @Override
     public void offlineListening(UnresolvedAddress address, OfflineListener listener) {
         registerService.offlineListening(address, listener);
     }

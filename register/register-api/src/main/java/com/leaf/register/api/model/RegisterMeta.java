@@ -5,7 +5,9 @@ import com.leaf.common.model.ServiceMeta;
 
 public class RegisterMeta {
 
-    private ServiceMeta serviceMeta ;
+    private ServiceMeta serviceMeta;
+
+    private String[] methods;
 
     private UnresolvedAddress address;
 
@@ -46,6 +48,14 @@ public class RegisterMeta {
 
     public void setWeight(int weight) {
         this.weight = weight;
+    }
+
+    public String[] getMethods() {
+        return methods;
+    }
+
+    public void setMethods(String[] methods) {
+        this.methods = methods;
     }
 
     @Override

@@ -1,5 +1,7 @@
 package com.leaf.common.model;
 
+import com.leaf.common.constants.Constants;
+
 /**
  * 服务三元素 确定服务
  */
@@ -10,6 +12,14 @@ public class ServiceMeta extends Directory {
     private String serviceProviderName;
 
     private String version;
+
+    public ServiceMeta(String serviceProviderName) {
+        this(Constants.DEFAULT_SERVICE_GROUP, serviceProviderName);
+    }
+
+    public ServiceMeta(String group, String serviceProviderName) {
+        this(group, serviceProviderName, Constants.DEFAULT_SERVICE_VERSION);
+    }
 
     public ServiceMeta(String group, String serviceProviderName, String version) {
         this.group = group;

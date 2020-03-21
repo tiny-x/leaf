@@ -3,8 +3,8 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <parent>
-        <artifactId>leaf</artifactId>
-        <groupId>com.leaf-rpc</groupId>
+        <artifactId>leaf-rpc</artifactId>
+        <groupId>com.leaf.rpc</groupId>
         <version>1.0.0</version>
     </parent>
     <modelVersion>4.0.0</modelVersion>
@@ -12,48 +12,44 @@
     <artifactId>example</artifactId>
 
     <dependencies>
-        <dependency>
-            <groupId>com.leaf-rpc</groupId>
-            <artifactId>common</artifactId>
-        </dependency>
 
         <dependency>
-            <groupId>com.leaf-rpc</groupId>
+            <groupId>com.leaf.rpc</groupId>
             <artifactId>rpc</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.leaf-rpc</groupId>
+            <groupId>com.leaf.rpc</groupId>
             <artifactId>register-default</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.leaf-rpc</groupId>
+            <groupId>com.leaf.rpc</groupId>
             <artifactId>register-zookeeper</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.leaf-rpc</groupId>
+            <groupId>com.leaf.rpc</groupId>
             <artifactId>serialization-protostuff</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.leaf-rpc</groupId>
+            <groupId>com.leaf.rpc</groupId>
             <artifactId>serialization-java</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.leaf-rpc</groupId>
+            <groupId>com.leaf.rpc</groupId>
             <artifactId>serialization-hessian</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.leaf-rpc</groupId>
+            <groupId>com.leaf.rpc</groupId>
             <artifactId>serialization-json</artifactId>
         </dependency>
 
         <dependency>
-            <groupId>com.leaf-rpc</groupId>
+            <groupId>com.leaf.rpc</groupId>
             <artifactId>spring-support</artifactId>
         </dependency>
 

@@ -6,7 +6,7 @@ import com.leaf.rpc.provider.DefaultProvider;
 import com.leaf.rpc.provider.Provider;
 import org.springframework.beans.factory.InitializingBean;
 
-public class SpringProvider implements InitializingBean {
+public class ProviderFactoryBean implements InitializingBean {
 
     private Integer port;
 
@@ -16,13 +16,22 @@ public class SpringProvider implements InitializingBean {
 
     private Provider provider;
 
-    public SpringProvider() {
+    private String group;
+
+    public ProviderFactoryBean() {
 
     }
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        provider = new DefaultProvider(port, registerType);
+        if (port == null && registerType == null) {
+            provider = new DefaultProvider();
+        } else if (port == null) {
+            provider = new DefaultProvider(registerType);
+        } else {
+            provider = new DefaultProvider(port, registerType);
+        }
+
         if (!Strings.isNullOrEmpty(registryServer)) {
             provider.connectToRegistryServer(registryServer);
         }
@@ -47,6 +56,14 @@ public class SpringProvider implements InitializingBean {
 
     public Provider getProvider() {
         return provider;
+    }
+
+    public String getGroup() {
+        return group;
+    }
+
+    public void setGroup(String group) {
+        this.group = group;
     }
 
     public void setRegisterType(String registerType) {

@@ -1,7 +1,7 @@
 package com.leaf.example.demo.annotation;
 
 import com.leaf.common.UnresolvedAddress;
-import com.leaf.rpc.ProxyFactory;
+import com.leaf.rpc.DefaultProxyFactory;
 import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.DefaultConsumer;
 
@@ -17,7 +17,7 @@ public class ConsumerExample {
         consumer.connect(address);
         consumer.connect(address);
 
-        userService = ProxyFactory.factory(UserService.class)
+        userService = DefaultProxyFactory.factory(UserService.class)
                 .consumer(consumer)
                 .providers(address)
                 .timeMillis(3000L)

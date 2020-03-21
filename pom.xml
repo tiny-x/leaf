@@ -4,8 +4,8 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
-    <groupId>com.leaf-rpc</groupId>
-    <artifactId>leaf</artifactId>
+    <groupId>com.leaf.rpc</groupId>
+    <artifactId>leaf-rpc</artifactId>
     <version>1.0.0</version>
     <packaging>pom</packaging>
 
@@ -18,56 +18,56 @@
         <dependencies>
             <!-- remoting -->
             <dependency>
-                <groupId>com.leaf-rpc</groupId>
+                <groupId>com.leaf.rpc</groupId>
                 <artifactId>remoting</artifactId>
                 <version>1.0.0</version>
             </dependency>
             <dependency>
-                <groupId>com.leaf-rpc</groupId>
+                <groupId>com.leaf.rpc</groupId>
                 <artifactId>remoting-api</artifactId>
                 <version>1.0.0</version>
             </dependency>
             <dependency>
-                <groupId>com.leaf-rpc</groupId>
+                <groupId>com.leaf.rpc</groupId>
                 <artifactId>remoting-netty</artifactId>
                 <version>1.0.0</version>
             </dependency>
             <!-- remoting -->
 
             <dependency>
-                <groupId>com.leaf-rpc</groupId>
+                <groupId>com.leaf.rpc</groupId>
                 <artifactId>rpc</artifactId>
                 <version>1.0.0</version>
             </dependency>
 
             <!-- serialization -->
             <dependency>
-                <groupId>com.leaf-rpc</groupId>
+                <groupId>com.leaf.rpc</groupId>
                 <artifactId>serialization</artifactId>
                 <version>1.0.0</version>
             </dependency>
             <dependency>
-                <groupId>com.leaf-rpc</groupId>
+                <groupId>com.leaf.rpc</groupId>
                 <artifactId>serialization-api</artifactId>
                 <version>1.0.0</version>
             </dependency>
             <dependency>
-                <groupId>com.leaf-rpc</groupId>
+                <groupId>com.leaf.rpc</groupId>
                 <artifactId>serialization-java</artifactId>
                 <version>1.0.0</version>
             </dependency>
             <dependency>
-                <groupId>com.leaf-rpc</groupId>
+                <groupId>com.leaf.rpc</groupId>
                 <artifactId>serialization-protostuff</artifactId>
                 <version>1.0.0</version>
             </dependency>
             <dependency>
-                <groupId>com.leaf-rpc</groupId>
+                <groupId>com.leaf.rpc</groupId>
                 <artifactId>serialization-hessian</artifactId>
                 <version>1.0.0</version>
             </dependency>
             <dependency>
-                <groupId>com.leaf-rpc</groupId>
+                <groupId>com.leaf.rpc</groupId>
                 <artifactId>serialization-json</artifactId>
                 <version>1.0.0</version>
             </dependency>
@@ -75,7 +75,7 @@
 
             <!-- example -->
             <dependency>
-                <groupId>com.leaf-rpc</groupId>
+                <groupId>com.leaf.rpc</groupId>
                 <artifactId>example</artifactId>
                 <version>1.0.0</version>
             </dependency>
@@ -83,7 +83,7 @@
 
             <!-- common -->
             <dependency>
-                <groupId>com.leaf-rpc</groupId>
+                <groupId>com.leaf.rpc</groupId>
                 <artifactId>common</artifactId>
                 <version>1.0.0</version>
             </dependency>
@@ -91,22 +91,22 @@
 
             <!-- register -->
             <dependency>
-                <groupId>com.leaf-rpc</groupId>
+                <groupId>com.leaf.rpc</groupId>
                 <artifactId>register</artifactId>
                 <version>1.0.0</version>
             </dependency>
             <dependency>
-                <groupId>com.leaf-rpc</groupId>
+                <groupId>com.leaf.rpc</groupId>
                 <artifactId>register-api</artifactId>
                 <version>1.0.0</version>
             </dependency>
             <dependency>
-                <groupId>com.leaf-rpc</groupId>
+                <groupId>com.leaf.rpc</groupId>
                 <artifactId>register-default</artifactId>
                 <version>1.0.0</version>
             </dependency>
             <dependency>
-                <groupId>com.leaf-rpc</groupId>
+                <groupId>com.leaf.rpc</groupId>
                 <artifactId>register-zookeeper</artifactId>
                 <version>1.0.0</version>
             </dependency>
@@ -114,7 +114,7 @@
 
             <!-- spring-support -->
             <dependency>
-                <groupId>com.leaf-rpc</groupId>
+                <groupId>com.leaf.rpc</groupId>
                 <artifactId>spring-support</artifactId>
                 <version>1.0.0</version>
             </dependency>
@@ -317,6 +317,19 @@
                         <showDeprecation>true</showDeprecation>
                         <compilerArgument>-Xlint:all</compilerArgument>
                     </configuration>
+                </plugin>
+                <!-- Source attach plugin -->
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-source-plugin</artifactId>
+                    <executions>
+                        <execution>
+                            <id>attach-sources</id>
+                            <goals>
+                                <goal>jar</goal>
+                            </goals>
+                        </execution>
+                    </executions>
                 </plugin>
             </plugins>
         </pluginManagement>

@@ -14,9 +14,7 @@ import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
 import org.apache.curator.framework.api.BackgroundCallback;
 import org.apache.curator.framework.api.CuratorEvent;
-import org.apache.curator.framework.recipes.cache.PathChildrenCache;
-import org.apache.curator.framework.recipes.cache.PathChildrenCacheEvent;
-import org.apache.curator.framework.recipes.cache.PathChildrenCacheListener;
+import org.apache.curator.framework.recipes.cache.*;
 import org.apache.curator.framework.state.ConnectionState;
 import org.apache.curator.framework.state.ConnectionStateListener;
 import org.apache.curator.retry.ExponentialBackoffRetry;
@@ -26,17 +24,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 import java.util.concurrent.ConcurrentMap;
 
 public class ZookeeperRegisterService extends AbstractRegisterService {
 
     private static final Logger logger = LoggerFactory.getLogger(ZookeeperRegisterService.class);
 
-    private static final int CONNECT_TIMEOUT = 3000;
+    private static final int CONNECT_TIMEOUT = 10000;
 
-    private static final int SESSION_TIMEOUT = 3000;
+    private static final int SESSION_TIMEOUT = 50000;
 
     private final ConcurrentMap<SubscribeMeta, PathChildrenCache> pathChildrenCache = Maps.newConcurrentMap();
 
@@ -78,6 +75,7 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                         for (RegisterMeta registerMeta : getProviderRegisterMetas()) {
                             doRegister(registerMeta);
                         }
+                        doSubscribeGroup();
                     }
                     default: {
                         logger.info("Zookeeper connection state changed {}.", connectionState);
@@ -101,7 +99,7 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                 curatorFramework.create().creatingParentsIfNeeded().forPath(directory);
             }
         } catch (Exception e) {
-            logger.warn("create parent node fail directory: {}", directory, e);
+            logger.warn("create parent node fail directory: {}, e: {}", directory, e.getMessage());
         }
 
         try {
@@ -112,18 +110,21 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                     logger.info("zookeeper do register registerMeta: {} result: {}", registerMeta, resultCode);
                     if (KeeperException.Code.OK.intValue() == resultCode) {
                         ZookeeperRegisterService.super.getProviderRegisterMetas().add(registerMeta);
+                    } else if (KeeperException.Code.NODEEXISTS.intValue() == resultCode) {
+                        logger.warn("zookeeper register warn registerMeta: {} result: {}", registerMeta, resultCode);
                     } else {
                         ZookeeperRegisterService.super.retryRegister(registerMeta);
                     }
                 }
-            }).forPath(String.format("%s/%s&%s&%s",
+            }).forPath(String.format("%s/%s&%s&%s&%s",
                     directory,
-                    String.valueOf(registerMeta.getAddress()),
-                    String.valueOf(registerMeta.getWeight()),
-                    String.valueOf(registerMeta.getConnCount())
+                    registerMeta.getAddress(),
+                    registerMeta.getWeight(),
+                    registerMeta.getConnCount(),
+                    Arrays.toString(registerMeta.getMethods()).substring(1, Arrays.toString(registerMeta.getMethods()).length() - 1)
             ));
         } catch (Exception e) {
-            logger.error("create register meta mode fail: {}", registerMeta.toString(), e);
+            logger.error("create register meta mode fail: {}, e: {}", registerMeta.toString(), e.getMessage());
         }
     }
 
@@ -139,7 +140,7 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                 return;
             }
         } catch (Exception e) {
-            logger.warn("do unregister checkExists directory: {} fail", directory, e);
+            logger.warn("do unregister checkExists directory: {} fail, e: {}", directory, e.getMessage());
         }
 
         try {
@@ -148,14 +149,15 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                 public void processResult(CuratorFramework curatorFramework, CuratorEvent curatorEvent) throws Exception {
                     logger.info("zookeeper do unregister registerMeta: {} result: {}", registerMeta, curatorEvent.getResultCode());
                 }
-            }).forPath(String.format("%s/%s&%s&%s",
+            }).forPath(String.format("%s/%s&%s&%s&%s",
                     directory,
-                    String.valueOf(registerMeta.getAddress()),
-                    String.valueOf(registerMeta.getWeight()),
-                    String.valueOf(registerMeta.getConnCount())
+                    registerMeta.getAddress(),
+                    registerMeta.getWeight(),
+                    registerMeta.getConnCount(),
+                    Arrays.toString(registerMeta.getMethods()).substring(1, Arrays.toString(registerMeta.getMethods()).length() - 1)
             ));
         } catch (Exception e) {
-            logger.warn("create register meta mode fail: {}", registerMeta.toString(), e);
+            logger.warn("create register meta mode fail: {}, e: {}", registerMeta.toString(), e.getMessage());
         }
     }
 
@@ -171,7 +173,7 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                 curatorFramework.create().creatingParentsIfNeeded().forPath(directory);
             }
         } catch (Exception e) {
-            logger.warn("create parent node fail directory: {}", directory, e);
+            logger.warn("create parent node fail directory: {}, e: {}", directory, e.getMessage());
         }
 
         try {
@@ -181,7 +183,7 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                             subscribeMeta.getAddressHost())
             );
         } catch (Exception e) {
-            logger.warn("create subscribe meta mode fail: {}", subscribeMeta.toString(), e);
+            logger.warn("create subscribe meta mode fail: {}, e: {}", subscribeMeta.toString(), e.getMessage());
         }
 
         PathChildrenCache pathChildrenCache = this.pathChildrenCache.get(subscribeMeta);
@@ -244,6 +246,43 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
         }
     }
 
+
+    @Override
+    protected void doSubscribeGroup() {
+
+        TreeCache treeCache = TreeCache.newBuilder(curatorFramework, "/providers").build();
+
+        // 添加一次监听
+        treeCache.getListenable().addListener(new TreeCacheListener() {
+
+            @Override
+            public void childEvent(CuratorFramework curatorFramework, TreeCacheEvent event) throws Exception {
+                TreeCacheEvent.Type type = event.getType();
+                switch (type) {
+                    case NODE_ADDED: {
+                        RegisterMeta registerMeta = parseProviderPath(event.getData().getPath());
+                        if (registerMeta != null) {
+                            ZookeeperRegisterService.super.notifyGroup(NotifyEvent.ADD, registerMeta);
+                        }
+                        break;
+                    }
+                    case NODE_REMOVED: {
+                        RegisterMeta registerMeta = parseProviderPath(event.getData().getPath());
+                        if (registerMeta != null) {
+                            ZookeeperRegisterService.super.notifyGroup(NotifyEvent.REMOVE, registerMeta);
+                        }
+                        break;
+                    }
+                }
+            }
+        });
+        try {
+            treeCache.start();
+        } catch (Exception e) {
+            logger.error("zookeeper doSubscribeGroup fail service meta", e);
+        }
+    }
+
     private ConcurrentSet<RegisterMeta> getRegisterMetas(RegisterMeta registerMeta) {
         ConcurrentSet<RegisterMeta> registerMetas = addressRegisters.get(registerMeta.getAddress());
         if (registerMetas == null) {
@@ -268,7 +307,7 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
      * | |                               +                                             |
      * | +----------------------------------------> /1.0.0                             |
      * | |                                            +                                |
-     * | +-------------------------------------------------> /ip:port&weight&connCount |
+     * | +-------------------------------------------------> /ip:port&weight&connCount&m1,m2 |
      * +-------------------------------------------------------------------------------+
      *
      * @param path
@@ -276,21 +315,25 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
      */
     private RegisterMeta parseProviderPath(String path) {
 
-        RegisterMeta registerMeta = new RegisterMeta();
-
         String[] strings0 = path.split("/");
+        if (strings0.length == 6) {
+            RegisterMeta registerMeta = new RegisterMeta();
+            ServiceMeta serviceMeta = new ServiceMeta(strings0[2], strings0[3], strings0[4]);
+            registerMeta.setServiceMeta(serviceMeta);
 
-        ServiceMeta serviceMeta = new ServiceMeta(strings0[2], strings0[3], strings0[4]);
-        registerMeta.setServiceMeta(serviceMeta);
 
-        String[] strings1 = strings0[5].split("&");
-        String[] address = strings1[0].split(":");
+            String[] strings1 = strings0[5].split("&");
+            String[] address = strings1[0].split(":");
 
-        UnresolvedAddress unresolvedAddress = new UnresolvedAddress(address[0], Integer.valueOf(address[1]));
+            UnresolvedAddress unresolvedAddress = new UnresolvedAddress(address[0], Integer.valueOf(address[1]));
 
-        registerMeta.setAddress(unresolvedAddress);
-        registerMeta.setWeight(Integer.valueOf(strings1[1]));
-        registerMeta.setConnCount(Integer.valueOf(strings1[2]));
-        return registerMeta;
+            registerMeta.setAddress(unresolvedAddress);
+            registerMeta.setWeight(Integer.valueOf(strings1[1]));
+            registerMeta.setConnCount(Integer.valueOf(strings1[2]));
+            registerMeta.setMethods(strings1[3].split(","));
+            return registerMeta;
+        } else {
+            return null;
+        }
     }
 }

@@ -13,11 +13,11 @@ import java.lang.reflect.Method;
 public class DefaultInvoker extends AbstractInvoker {
 
     public DefaultInvoker(
-                String application,
-                Dispatcher dispatcher,
-                ServiceMeta serviceMeta,
-                StrategyConfig strategyConfig,
-                InvokeType invokeType) {
+            String application,
+            Dispatcher dispatcher,
+            ServiceMeta serviceMeta,
+            StrategyConfig strategyConfig,
+            InvokeType invokeType) {
         super(application, dispatcher, serviceMeta, strategyConfig, invokeType);
     }
 

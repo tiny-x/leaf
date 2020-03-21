@@ -16,7 +16,7 @@ public class GenericInvoke extends AbstractInvoker {
         super(application, dispatcher, serviceMeta, strategyConfig, invokeType);
     }
 
-    public Object $invoke(String methodName, Object... args) throws Throwable{
+    public Object $invoke(String methodName, Object... args) throws Throwable {
         return doInvoke(methodName, Object.class, args);
     }
 }

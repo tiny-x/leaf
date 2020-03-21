@@ -1,10 +1,10 @@
 package com.leaf.spring.schema;
 
 import com.google.common.base.Strings;
-import com.leaf.spring.init.bean.SpringConsumer;
-import com.leaf.spring.init.bean.SpringProvider;
-import com.leaf.spring.init.bean.SpringReferenceBean;
-import com.leaf.spring.init.bean.SpringServiceBean;
+import com.leaf.spring.init.bean.ConsumerFactory;
+import com.leaf.spring.init.bean.ProviderFactoryBean;
+import com.leaf.spring.init.bean.ReferenceFactoryBean;
+import com.leaf.spring.init.bean.ServiceFactoryBean;
 import org.springframework.beans.factory.config.BeanDefinition;
 import org.springframework.beans.factory.config.BeanDefinitionHolder;
 import org.springframework.beans.factory.config.RuntimeBeanReference;
@@ -27,13 +27,13 @@ public class LeafBeanDefinitionParser implements BeanDefinitionParser {
 
     @Override
     public BeanDefinition parse(Element element, ParserContext parserContext) {
-        if (aClass == SpringProvider.class) {
+        if (aClass == ProviderFactoryBean.class) {
             return parseProvider(element, parserContext);
-        } else if (aClass == SpringServiceBean.class) {
+        } else if (aClass == ServiceFactoryBean.class) {
             return parseServiceBean(element, parserContext);
-        } else if (aClass == SpringConsumer.class) {
+        } else if (aClass == ConsumerFactory.class) {
             return parseConsumer(element, parserContext);
-        } else if (aClass == SpringReferenceBean.class) {
+        } else if (aClass == ReferenceFactoryBean.class) {
             return parseReferenceBean(element, parserContext);
         } else {
             throw new BeanDefinitionValidationException("Unknown class to definition: " + aClass.getName());

@@ -1,7 +1,7 @@
 package com.leaf.remoting.api.future;
 
-import com.leaf.remoting.api.InvokeCallback;
 import com.leaf.common.concurrent.SemaphoreReleaseOnce;
+import com.leaf.remoting.api.InvokeCallback;
 
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Semaphore;

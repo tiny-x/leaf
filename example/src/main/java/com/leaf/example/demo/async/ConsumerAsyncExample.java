@@ -4,13 +4,12 @@ import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.example.demo.HelloService;
 import com.leaf.remoting.netty.NettyClientConfig;
-import com.leaf.rpc.ProxyFactory;
+import com.leaf.rpc.DefaultProxyFactory;
 import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.DefaultConsumer;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.future.InvokeFuture;
 import com.leaf.rpc.consumer.future.InvokeFutureContext;
-import com.leaf.rpc.consumer.future.DefaultInvokeFuture;
 import com.leaf.rpc.consumer.future.InvokeFutureListener;
 
 public class ConsumerAsyncExample {
@@ -24,7 +23,7 @@ public class ConsumerAsyncExample {
         ServiceMeta serviceMeta = new ServiceMeta("test", "org.rpc.example.demo.HelloService", "1.0.0");
         consumer.client().addChannelGroup(serviceMeta, address);
 
-        HelloService helloService = ProxyFactory.factory(HelloService.class)
+        HelloService helloService = DefaultProxyFactory.factory(HelloService.class)
                 .consumer(consumer)
                 .directory(serviceMeta)
                 .timeMillis(3000L)

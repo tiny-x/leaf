@@ -1,6 +1,6 @@
 package com.leaf.spring.init.bean;
 
-import com.leaf.rpc.ProxyFactory;
+import com.leaf.rpc.DefaultProxyFactory;
 import com.leaf.rpc.balancer.LoadBalancerType;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.cluster.ClusterInvoker;
@@ -11,7 +11,7 @@ import org.springframework.beans.factory.InitializingBean;
 
 import static com.google.common.base.Preconditions.checkNotNull;
 
-public class SpringReferenceBean<T> implements FactoryBean<T>, InitializingBean {
+public class ReferenceFactoryBean<T> implements FactoryBean<T>, InitializingBean {
 
     //----------------------
     private String group;
@@ -23,7 +23,7 @@ public class SpringReferenceBean<T> implements FactoryBean<T>, InitializingBean 
 
     private Class<T> interfaceClass;
 
-    private SpringConsumer consumer;
+    private ConsumerFactory consumer;
 
     private T proxy;
 
@@ -47,7 +47,7 @@ public class SpringReferenceBean<T> implements FactoryBean<T>, InitializingBean 
     public void afterPropertiesSet() throws Exception {
         checkNotNull(consumer, "consumer");
 
-        ProxyFactory factory = ProxyFactory.factory(interfaceClass);
+        DefaultProxyFactory factory = DefaultProxyFactory.factory(interfaceClass);
         factory.consumer(consumer.getConsumer())
                 .group(group)
                 .version(version)
@@ -98,7 +98,7 @@ public class SpringReferenceBean<T> implements FactoryBean<T>, InitializingBean 
         return true;
     }
 
-    public void setConsumer(SpringConsumer consumer) {
+    public void setConsumer(ConsumerFactory consumer) {
         this.consumer = consumer;
     }
 

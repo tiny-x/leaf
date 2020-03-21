@@ -11,8 +11,14 @@ public class HelloServiceImpl implements HelloService {
     private final static Logger logger = LoggerFactory.getLogger(HelloServiceImpl.class);
 
     @Override
-    public String sayHello(String name) {
-        logger.info("HelloServiceImpl param:{}", name);
+    public String sayHello(String name, String age) {
+        logger.info("HelloServiceImpl name:{}, age:{}", name, age);
         return "hello" + name;
+    }
+
+    @Override
+    public String sayHello(User user) {
+        logger.info("HelloServiceImpl param:{}", user.getName());
+        return null;
     }
 }

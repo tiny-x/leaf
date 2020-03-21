@@ -66,7 +66,7 @@ public class ProtocolHead {
 
     public static byte toSign(byte messageType, byte messageCode, byte serializerCode) {
         return (byte) (
-                (messageType << 7) | (messageCode << 3) | (serializerCode >> 1)
+                (messageType << 7) | (messageCode << 3) | serializerCode
         );
     }
 

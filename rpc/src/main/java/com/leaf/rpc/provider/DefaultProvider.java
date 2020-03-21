@@ -21,6 +21,8 @@ import com.leaf.rpc.local.DefaultServiceRegistry;
 import com.leaf.rpc.local.ServiceRegistry;
 import com.leaf.rpc.provider.process.DefaultProviderProcessor;
 
+import java.lang.reflect.Method;
+
 public class DefaultProvider implements Provider {
 
     private final RemotingServer server;
@@ -47,6 +49,10 @@ public class DefaultProvider implements Provider {
 
     public DefaultProvider(NettyServerConfig nettyServerConfig) {
         this(Constants.DEFAULT_PROVIDER_PORT, nettyServerConfig);
+    }
+
+    public DefaultProvider(RegisterType registerType) {
+        this(Constants.DEFAULT_PROVIDER_PORT, registerType);
     }
 
     public DefaultProvider(int port, NettyServerConfig nettyServerConfig) {
@@ -107,6 +113,14 @@ public class DefaultProvider implements Provider {
         registerMeta.setConnCount(config.getConnCount());
         registerMeta.setAddress(new UnresolvedAddress(InetUtils.getLocalHost(), config.getPort()));
         registerMeta.setWeight(serviceWrapper.getWeight());
+
+        Class<?> anInterface = serviceWrapper.getServiceProvider().getClass().getInterfaces()[0];
+        Method[] declaredMethods = anInterface.getDeclaredMethods();
+        String[] methods = new String[declaredMethods.length];
+        for (int i = 0; i < declaredMethods.length; i++) {
+            methods[i] = declaredMethods[i].getName();
+        }
+        registerMeta.setMethods(methods);
 
         registerService.register(registerMeta);
     }

@@ -2,12 +2,12 @@ package com.leaf.remoting.netty;
 
 import com.leaf.remoting.api.ChannelEventListener;
 import com.leaf.remoting.api.InvokeCallback;
-import com.leaf.remoting.api.RequestProcessor;
 import com.leaf.remoting.api.RemotingServer;
+import com.leaf.remoting.api.RequestProcessor;
+import com.leaf.remoting.api.exception.RemotingException;
 import com.leaf.remoting.api.payload.ByteHolder;
 import com.leaf.remoting.api.payload.RequestCommand;
 import com.leaf.remoting.api.payload.ResponseCommand;
-import com.leaf.remoting.api.exception.RemotingException;
 import com.leaf.remoting.netty.event.ChannelEvent;
 import com.leaf.remoting.netty.event.ChannelEventType;
 import io.netty.bootstrap.ServerBootstrap;
@@ -15,7 +15,6 @@ import io.netty.channel.*;
 import io.netty.channel.nio.NioEventLoopGroup;
 import io.netty.channel.socket.SocketChannel;
 import io.netty.channel.socket.nio.NioServerSocketChannel;
-import io.netty.handler.timeout.IdleState;
 import io.netty.handler.timeout.IdleStateEvent;
 import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
@@ -111,7 +110,7 @@ public class NettyServer extends NettyServiceAbstract implements RemotingServer 
         serverBootstrap.group(nioEventLoopGroupMain, nioEventLoopGroupWorker)
                 .channel(NioServerSocketChannel.class)
                 .option(ChannelOption.SO_BACKLOG, 32768)
-                .childOption(ChannelOption.SO_KEEPALIVE,  false)
+                .childOption(ChannelOption.SO_KEEPALIVE, false)
                 .childOption(ChannelOption.SO_SNDBUF, config.getServerSocketSndBufSize())
                 .childOption(ChannelOption.SO_RCVBUF, config.getServerSocketRcvBufSize())
                 .childHandler(new ChannelInitializer<SocketChannel>() {
@@ -264,21 +263,14 @@ public class NettyServer extends NettyServiceAbstract implements RemotingServer 
 
     @Override
     public void shutdownGracefully() {
-        try {
-            if (nioEventLoopGroupMain != null) {
-                nioEventLoopGroupMain.shutdownGracefully();
-            }
-            if (nioEventLoopGroupWorker != null) {
-                nioEventLoopGroupWorker.shutdownGracefully();
-            }
-            if (publicExecutorService != null) {
-                publicExecutorService.shutdown();
-            }
-            if (scanResponseTableExecutorService != null) {
-                scanResponseTableExecutorService.shutdown();
-            }
-        } catch (Exception e) {
-            logger.error("netty server shutdown gracefully error!", e);
+        nioEventLoopGroupMain.shutdownGracefully().syncUninterruptibly();
+        nioEventLoopGroupWorker.shutdownGracefully().syncUninterruptibly();
+
+        if (publicExecutorService != null) {
+            publicExecutorService.shutdown();
+        }
+        if (scanResponseTableExecutorService != null) {
+            scanResponseTableExecutorService.shutdown();
         }
     }
 

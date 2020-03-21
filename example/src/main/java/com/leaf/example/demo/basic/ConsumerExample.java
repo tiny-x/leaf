@@ -4,7 +4,7 @@ import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.example.demo.HelloService;
 import com.leaf.remoting.netty.NettyClientConfig;
-import com.leaf.rpc.ProxyFactory;
+import com.leaf.rpc.DefaultProxyFactory;
 import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.DefaultConsumer;
 
@@ -24,7 +24,7 @@ public class ConsumerExample {
         ServiceMeta serviceMeta = new ServiceMeta("test", "org.rpc.example.demo.HelloService", "1.0.0");
         consumer.client().addChannelGroup(serviceMeta, address);
 
-        helloService = ProxyFactory.factory(HelloService.class)
+        helloService = DefaultProxyFactory.factory(HelloService.class)
                 .consumer(consumer)
                 .directory(serviceMeta)
                 .timeMillis(300000L)

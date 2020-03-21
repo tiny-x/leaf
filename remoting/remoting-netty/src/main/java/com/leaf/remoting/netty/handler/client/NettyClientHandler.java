@@ -72,6 +72,9 @@ public class NettyClientHandler extends SimpleChannelInboundHandler<ByteHolder> 
         reconnect();
     }
 
+    /**
+     * 重连
+     */
     private void reconnect() {
         UnresolvedAddress address = connector.getAddress();
 

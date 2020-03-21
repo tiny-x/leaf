@@ -7,6 +7,7 @@ import com.leaf.rpc.GenericProxyFactory;
 import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.DefaultConsumer;
 import com.leaf.rpc.consumer.invoke.GenericInvoke;
+import com.leaf.serialization.api.SerializerType;
 
 public class ConsumerExample {
 
@@ -25,8 +26,19 @@ public class ConsumerExample {
                 .timeMillis(3000L)
                 .newProxy();
 
-        String s = (String) genericInvoke.$invoke("sayHello"," biu biu biu!!!");
+        User user = new User();
+        user.setName("aaaa");
+        user.setAge("18");
+        String s = (String) genericInvoke.$invoke("sayHello", "yefei", "8");
         System.out.printf("---------->: receive provider message %s \n", s);
+
+        GenericInvoke genericInvoke2 = GenericProxyFactory.factory()
+                .consumer(consumer)
+                .directory(serviceMeta)
+                .timeMillis(1L)
+                .newProxy();
+        String s2 = (String) genericInvoke2.$invoke("sayHello", "yefei", "18");
+        System.out.printf("---------->: receive provider message %s \n", s2);
 
     }
 }

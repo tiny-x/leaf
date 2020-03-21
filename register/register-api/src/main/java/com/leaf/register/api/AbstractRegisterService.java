@@ -22,7 +22,19 @@ public abstract class AbstractRegisterService extends AbstractRetryRegisterServi
      */
     private final ConcurrentMap<ServiceMeta, NotifyListener> subscribeListeners = new ConcurrentHashMap<>();
 
+    /**
+     * 服务组的监听（获取所有组）
+     */
+    private volatile NotifyListener subscribeGroupListeners;
 
+    /**
+     * 服务名称的监听（获取所有版本）
+     */
+    private final ConcurrentMap<ServiceMeta, NotifyListener> subscribeServiceNameListeners = new ConcurrentHashMap<>();
+
+    /**
+     * 服务下线通知监听
+     */
     private final ConcurrentMap<UnresolvedAddress, CopyOnWriteArrayList<OfflineListener>> offlineListeners =
             new ConcurrentHashMap<>();
 
@@ -61,6 +73,13 @@ public abstract class AbstractRegisterService extends AbstractRetryRegisterServi
     }
 
     @Override
+    public void subscribeGroup(NotifyListener notifyListener) {
+        logger.info("[SUBSCRIBE_GROUP] subscribe all group");
+        this.subscribeGroupListeners = notifyListener;
+        doSubscribeGroup();
+    }
+
+    @Override
     public void offlineListening(UnresolvedAddress address, OfflineListener listener) {
         CopyOnWriteArrayList<OfflineListener> offlineListenerList = offlineListeners.get(address);
         if (offlineListenerList == null) {
@@ -90,6 +109,32 @@ public abstract class AbstractRegisterService extends AbstractRetryRegisterServi
 
         if (registerMetas != null && registerMetas.length > 0) {
             NotifyListener notifyListener = subscribeListeners.get(serviceMeta);
+            for (RegisterMeta registerMeta : registerMetas) {
+                notifyListener.notify(registerMeta, event);
+            }
+        }
+    }
+
+    public void notifyGroup(NotifyEvent event, RegisterMeta... registerMetas) {
+        logger.info("[NOTIFY] all group notifyEvent：{}, registerMetas: {}",
+                event.name(),
+                registerMetas);
+
+        if (registerMetas != null && registerMetas.length > 0 && subscribeGroupListeners != null) {
+            for (RegisterMeta registerMeta : registerMetas) {
+                subscribeGroupListeners.notify(registerMeta, event);
+            }
+        }
+    }
+
+    public void notifyService(ServiceMeta serviceMeta, NotifyEvent event, RegisterMeta... registerMetas) {
+        logger.info("[NOTIFY] all service name: {} notifyEvent：{}, registerMetas: {}",
+                serviceMeta,
+                event.name(),
+                registerMetas);
+
+        if (registerMetas != null && registerMetas.length > 0) {
+            NotifyListener notifyListener = subscribeServiceNameListeners.get(serviceMeta);
             for (RegisterMeta registerMeta : registerMetas) {
                 notifyListener.notify(registerMeta, event);
             }

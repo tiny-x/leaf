@@ -1,5 +1,6 @@
 package com.leaf.rpc.local;
 
+import com.google.common.base.Strings;
 import com.leaf.common.annotation.ServiceInterface;
 import com.leaf.common.annotation.ServiceProvider;
 import com.leaf.common.constants.Constants;
@@ -62,7 +63,7 @@ public final class DefaultServiceRegistry implements ServiceRegistry {
     @Override
     public ServiceWrapper register() {
 
-        checkNotNull(serviceProvider,"serviceProvider");
+        checkNotNull(serviceProvider, "serviceProvider is null");
 
         ServiceProvider annotationProvider = this.serviceProvider.getClass().getAnnotation(ServiceProvider.class);
         ServiceInterface annotationInterface = null;
@@ -80,7 +81,7 @@ public final class DefaultServiceRegistry implements ServiceRegistry {
             }
         }
 
-        checkNotNull(interfaceClass,"interfaceClass");
+        checkNotNull(interfaceClass, "interfaceClass is null");
 
         if (annotationProvider != null) {
             checkArgument(
@@ -108,9 +109,9 @@ public final class DefaultServiceRegistry implements ServiceRegistry {
         }
 
         ServiceWrapper wrapper = new ServiceWrapper(
-                group == null ? Constants.DEFAULT_SERVICE_GROUP : group,
-                providerName == null ? interfaceClass.getName() : providerName,
-                version == null ? Constants.DEFAULT_SERVICE_VERSION : version,
+                Strings.isNullOrEmpty(group) ? Constants.DEFAULT_SERVICE_GROUP : group,
+                Strings.isNullOrEmpty(providerName) ? interfaceClass.getName() : providerName,
+                Strings.isNullOrEmpty(version) ? Constants.DEFAULT_SERVICE_VERSION : version,
                 serviceProvider,
                 weight);
 

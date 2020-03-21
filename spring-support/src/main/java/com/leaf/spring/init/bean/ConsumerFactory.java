@@ -5,7 +5,7 @@ import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.DefaultConsumer;
 import org.springframework.beans.factory.InitializingBean;
 
-public class SpringConsumer implements InitializingBean {
+public class ConsumerFactory implements InitializingBean {
 
     private String id;
 

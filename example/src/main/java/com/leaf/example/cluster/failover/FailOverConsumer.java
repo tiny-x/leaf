@@ -2,7 +2,7 @@ package com.leaf.example.cluster.failover;
 
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.example.cluster.api.ClusterService;
-import com.leaf.rpc.ProxyFactory;
+import com.leaf.rpc.DefaultProxyFactory;
 import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.DefaultConsumer;
 import com.leaf.rpc.consumer.InvokeType;
@@ -36,7 +36,7 @@ public class FailOverConsumer {
     }
 
     private static void sync(Consumer consumer, UnresolvedAddress[] addresses) {
-        ClusterService clusterService = ProxyFactory.factory(ClusterService.class)
+        ClusterService clusterService = DefaultProxyFactory.factory(ClusterService.class)
                 .consumer(consumer)
                 .providers(addresses)
                 .strategy(ClusterInvoker.Strategy.FAIL_OVER)
@@ -67,7 +67,7 @@ public class FailOverConsumer {
     }
 
     private static void async(Consumer consumer, UnresolvedAddress[] addresses) {
-        ClusterService clusterService = ProxyFactory.factory(ClusterService.class)
+        ClusterService clusterService = DefaultProxyFactory.factory(ClusterService.class)
                 .consumer(consumer)
                 .providers(addresses)
                 .invokeType(InvokeType.ASYNC)

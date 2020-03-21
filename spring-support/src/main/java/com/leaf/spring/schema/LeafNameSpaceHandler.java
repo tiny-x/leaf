@@ -1,18 +1,18 @@
 package com.leaf.spring.schema;
 
-import com.leaf.spring.init.bean.SpringConsumer;
-import com.leaf.spring.init.bean.SpringProvider;
-import com.leaf.spring.init.bean.SpringReferenceBean;
-import com.leaf.spring.init.bean.SpringServiceBean;
+import com.leaf.spring.init.bean.ConsumerFactory;
+import com.leaf.spring.init.bean.ProviderFactoryBean;
+import com.leaf.spring.init.bean.ReferenceFactoryBean;
+import com.leaf.spring.init.bean.ServiceFactoryBean;
 import org.springframework.beans.factory.xml.NamespaceHandlerSupport;
 
 public class LeafNameSpaceHandler extends NamespaceHandlerSupport {
 
     @Override
     public void init() {
-        registerBeanDefinitionParser("provider", new LeafBeanDefinitionParser(SpringProvider.class));
-        registerBeanDefinitionParser("consumer", new LeafBeanDefinitionParser(SpringConsumer.class));
-        registerBeanDefinitionParser("service", new LeafBeanDefinitionParser(SpringServiceBean.class));
-        registerBeanDefinitionParser("reference", new LeafBeanDefinitionParser(SpringReferenceBean.class));
+        registerBeanDefinitionParser("provider", new LeafBeanDefinitionParser(ProviderFactoryBean.class));
+        registerBeanDefinitionParser("consumer", new LeafBeanDefinitionParser(ConsumerFactory.class));
+        registerBeanDefinitionParser("service", new LeafBeanDefinitionParser(ServiceFactoryBean.class));
+        registerBeanDefinitionParser("reference", new LeafBeanDefinitionParser(ReferenceFactoryBean.class));
     }
 }

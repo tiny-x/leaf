@@ -10,6 +10,7 @@ public class ProviderExample {
     public static void main(String[] args) {
         NettyServerConfig config = new NettyServerConfig();
         Provider provider = new DefaultProvider(config);
+
         provider.start();
         provider.registerGlobalFlowController();
 
