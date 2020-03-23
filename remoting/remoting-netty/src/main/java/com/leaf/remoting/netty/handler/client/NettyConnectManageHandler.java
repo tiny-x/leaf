@@ -88,7 +88,7 @@ public class NettyConnectManageHandler extends ChannelDuplexHandler {
                     ctx.channel().writeAndFlush(Heartbeats.heartbeatContent()).addListener(new ChannelFutureListener() {
                         @Override
                         public void operationComplete(ChannelFuture channelFuture) throws Exception {
-                            logger.debug("channel write idle , send heartbeat, isSuccess:{}", channelFuture.isSuccess());
+                            logger.debug("channel write idle , send heartbeat, isSuccess: {}", channelFuture.isSuccess());
                         }
                     });
                     break;

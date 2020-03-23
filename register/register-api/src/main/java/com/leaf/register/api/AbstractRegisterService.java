@@ -102,10 +102,7 @@ public abstract class AbstractRegisterService extends AbstractRetryRegisterServi
     }
 
     public void notify(ServiceMeta serviceMeta, NotifyEvent event, RegisterMeta... registerMetas) {
-        logger.info("[NOTIFY] consumer service: {} notifyEvent：{}, registerMetas: {}",
-                serviceMeta,
-                event.name(),
-                registerMetas);
+        logger.info("[NOTIFY] consumer registerMetas: {}, notifyEvent：{}", registerMetas, event.name());
 
         if (registerMetas != null && registerMetas.length > 0) {
             NotifyListener notifyListener = subscribeListeners.get(serviceMeta);
@@ -116,9 +113,7 @@ public abstract class AbstractRegisterService extends AbstractRetryRegisterServi
     }
 
     public void notifyGroup(NotifyEvent event, RegisterMeta... registerMetas) {
-        logger.info("[NOTIFY] all group notifyEvent：{}, registerMetas: {}",
-                event.name(),
-                registerMetas);
+        logger.info("[NOTIFY] all group notifyEvent：{}, registerMetas: {}", registerMetas, event.name());
 
         if (registerMetas != null && registerMetas.length > 0 && subscribeGroupListeners != null) {
             for (RegisterMeta registerMeta : registerMetas) {

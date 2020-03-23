@@ -137,16 +137,6 @@ public abstract class AbstractProxyFactory {
                             for (int i = 0; i < connCount; i++) {
                                 consumer.connect(registerMeta.getAddress());
                             }
-
-                            // 设置channelGroup(相同地址的channel) weight
-                            consumer.client()
-                                    .group(registerMeta.getAddress())
-                                    .setWeight(serviceMeta, registerMeta.getWeight());
-
-                            // channelGroup 和 serviceMeta 关系
-                            consumer.client().addChannelGroup(serviceMeta, registerMeta.getAddress());
-                            logger.info("add channel group, address: {}, serviceMeta: {}",  registerMeta.getAddress(), serviceMeta);
-
                             consumer.offlineListening(registerMeta.getAddress(), new OfflineListener() {
                                 @Override
                                 public void offline() {
@@ -157,6 +147,13 @@ public abstract class AbstractProxyFactory {
                                 }
                             });
                         }
+                        // channelGroup 和 serviceMeta 关系
+                        consumer.client().addChannelGroup(serviceMeta, registerMeta.getAddress());
+                        // 设置channelGroup(相同地址的channel) weight
+                        consumer.client()
+                                .group(registerMeta.getAddress())
+                                .setWeight(serviceMeta, registerMeta.getWeight());
+                        logger.info("add channel group, address: {}, serviceMeta: {}",  registerMeta.getAddress(), serviceMeta);
                         break;
                     }
                     case REMOVE: {

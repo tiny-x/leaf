@@ -1,10 +1,13 @@
 package com.leaf.rpc.exector;
 
 import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicInteger;
 
 public class ThreadPoolExecutorFactory implements ExecutorFactory {
 
     private static final int AVAILABLE_PROCESSORS = Runtime.getRuntime().availableProcessors();
+
+    private final AtomicInteger atomicInteger = new AtomicInteger(0);
 
     @Override
     public ExecutorService createExecutorService() {
@@ -18,7 +21,7 @@ public class ThreadPoolExecutorFactory implements ExecutorFactory {
                     @Override
                     public Thread newThread(Runnable r) {
                         Thread thread = new Thread(r);
-                        thread.setName("REQUEST_PROCESS#PROVIDER");
+                        thread.setName("REQUEST_PROCESS#PROVIDER-" + atomicInteger.getAndIncrement());
                         return thread;
                     }
                 }
