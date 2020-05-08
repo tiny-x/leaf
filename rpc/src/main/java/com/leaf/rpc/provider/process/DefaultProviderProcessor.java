@@ -1,5 +1,6 @@
 package com.leaf.rpc.provider.process;
 
+import com.leaf.common.context.RpcContext;
 import com.leaf.remoting.api.ProtocolHead;
 import com.leaf.remoting.api.RequestWrapper;
 import com.leaf.remoting.api.ResponseWrapper;
@@ -52,11 +53,13 @@ public class DefaultProviderProcessor implements RequestProcessor {
                     logger.error(message);
                 } else {
                     try {
+                        RpcContext.setAttachments(requestWrapper.getAttachment());
                         result = Reflects.Invoke(
                                 serviceWrapper.getServiceProvider(),
                                 requestWrapper.getMethodName(),
                                 requestWrapper.getArgs()
                         );
+                        RpcContext.clearAttachments();
                     } catch (Throwable t) {
                         logger.error(t.getMessage(), t);
                         result = t;

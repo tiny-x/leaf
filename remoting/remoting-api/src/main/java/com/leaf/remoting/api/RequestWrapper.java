@@ -3,9 +3,11 @@ package com.leaf.remoting.api;
 import com.leaf.common.model.ServiceMeta;
 
 import java.io.Serializable;
+import java.util.Map;
 
 /**
  * 请求 包装, 用与序列化
+ * @author yefei
  */
 public class RequestWrapper implements Serializable {
 
@@ -18,6 +20,8 @@ public class RequestWrapper implements Serializable {
     private String methodName;
 
     private Object[] args;
+
+    private Map<String, String> attachment;
 
     public ServiceMeta getServiceMeta() {
         return serviceMeta;
@@ -49,5 +53,13 @@ public class RequestWrapper implements Serializable {
 
     public void setApplication(String application) {
         this.application = application;
+    }
+
+    public Map<String, String> getAttachment() {
+        return attachment;
+    }
+
+    public void setAttachment(Map<String, String> attachment) {
+        this.attachment = attachment;
     }
 }

@@ -1,5 +1,6 @@
 package com.leaf.rpc.consumer.dispatcher;
 
+import com.leaf.common.context.RpcContext;
 import com.leaf.remoting.api.ResponseWrapper;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.remoting.api.InvokeCallback;
@@ -91,27 +92,30 @@ public abstract class AbstractDispatcher implements Dispatcher {
                                          Class<T> returnType,
                                          InvokeType invokeType,
                                          ChannelGroup... channelGroup) throws Throwable {
-
+        InvokeFuture<T> invokeFuture = null;
         switch (invokeType) {
             case SYNC: {
                 if (dispatchType == DispatchType.BROADCAST) {
                     throw new UnsupportedOperationException("syncInvoke Unsupported broadcast dispatch!");
                 }
-                return invokeSync(requestCommand, returnType, channelGroup[0]);
+                invokeFuture = invokeSync(requestCommand, returnType, channelGroup[0]);
+                break;
             }
             case ASYNC: {
-                return invokeAsync(requestCommand, dispatchType, returnType, channelGroup);
+                invokeFuture = invokeAsync(requestCommand, dispatchType, returnType, channelGroup);
+                break;
             }
             case ONE_WAY: {
                 invokeOneWay(requestCommand, dispatchType, channelGroup);
-                return null;
+                break;
             }
             default: {
                 String errorMessage = String.format("Unsupported InvokeType: %s", invokeType.name());
                 throw new UnsupportedOperationException(errorMessage);
             }
         }
-
+        RpcContext.clearAttachments();
+        return invokeFuture;
     }
 
     private <T> InvokeFuture<T> invokeSync(RequestCommand requestCommand, Class<T> returnType, ChannelGroup channelGroup) throws Throwable {
@@ -125,12 +129,11 @@ public abstract class AbstractDispatcher implements Dispatcher {
         ResponseWrapper responseWrapper = getSerializer().deserialize(responseCommand.getBody(), ResponseWrapper.class);
         if (responseCommand.getStatus() == ResponseStatus.SUCCESS.value()) {
             invokeFuture.complete((T) responseWrapper.getResult());
-            return invokeFuture;
         } else {
             Throwable throwable = handlerException(responseCommand);
             invokeFuture.complete((T) throwable);
-            return invokeFuture;
         }
+        return invokeFuture;
     }
 
     private <T> InvokeFuture<T> invokeAsync(RequestCommand requestCommand, DispatchType dispatchType, Class<T> returnType, ChannelGroup... channelGroup) throws Throwable {

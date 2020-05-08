@@ -1,6 +1,7 @@
 package com.leaf.example.demo.async;
 
 import com.leaf.common.UnresolvedAddress;
+import com.leaf.common.context.RpcContext;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.example.demo.HelloService;
 import com.leaf.remoting.netty.NettyClientConfig;
@@ -30,6 +31,7 @@ public class ConsumerAsyncExample {
                 .invokeType(InvokeType.ASYNC)
                 .newProxy();
 
+        RpcContext.putAttachment("attach", "async 我是 attach");
         String s = helloService.sayHello(" biu biu biu!!!");
         System.out.println(s);
 

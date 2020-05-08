@@ -1,5 +1,6 @@
 package com.leaf.example.demo;
 
+import com.leaf.common.context.RpcContext;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,6 +18,7 @@ public class HelloServiceImpl implements HelloService {
     @Override
     public String sayHello(String name) {
         logger.info("HelloServiceImpl param:{}", name);
+        logger.info("attach : {}", RpcContext.getAttachments());
         return "hello" + name;
     }
 }

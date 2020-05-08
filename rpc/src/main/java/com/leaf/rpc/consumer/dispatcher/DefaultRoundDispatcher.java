@@ -1,5 +1,6 @@
 package com.leaf.rpc.consumer.dispatcher;
 
+import com.leaf.common.context.RpcContext;
 import com.leaf.remoting.api.ProtocolHead;
 import com.leaf.remoting.api.RequestWrapper;
 import com.leaf.remoting.api.channel.ChannelGroup;
@@ -20,8 +21,8 @@ public class DefaultRoundDispatcher extends AbstractDispatcher {
 
     @Override
     public <T> InvokeFuture<T> dispatch(RequestWrapper request, Class<T> returnType, InvokeType invokeType) throws Throwable {
-
         final RequestWrapper requestWrapper = request;
+        requestWrapper.setAttachment(RpcContext.getAttachments());
 
         // 通过软负载均衡选择一个channel
         ChannelGroup channelGroup = select(requestWrapper.getServiceMeta());
