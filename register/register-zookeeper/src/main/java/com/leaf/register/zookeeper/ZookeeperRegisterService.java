@@ -1,7 +1,6 @@
 package com.leaf.register.zookeeper;
 
 import com.leaf.common.UnresolvedAddress;
-import com.leaf.common.concurrent.ConcurrentSet;
 import com.leaf.common.constants.Constants;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.common.utils.Maps;
@@ -25,26 +24,33 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Arrays;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ScheduledThreadPoolExecutor;
+import java.util.concurrent.TimeUnit;
 
+/**
+ * @author yefei
+ */
 public class ZookeeperRegisterService extends AbstractRegisterService {
 
     private static final Logger logger = LoggerFactory.getLogger(ZookeeperRegisterService.class);
 
     private static final int CONNECT_TIMEOUT = 10000;
 
-    private static final int SESSION_TIMEOUT = 50000;
+    private static final int SESSION_TIMEOUT = 20000;
 
     private final ConcurrentMap<SubscribeMeta, PathChildrenCache> pathChildrenCache = Maps.newConcurrentMap();
 
     /**
      * 指定地址上注册的服务，当注册的服务为空时，通知下线（客户端断开与原有服务端的连接）
      */
-    private final ConcurrentMap<UnresolvedAddress, ConcurrentSet<RegisterMeta>> addressRegisters = Maps.newConcurrentMap();
+    private final ConcurrentMap<UnresolvedAddress, ConcurrentMap<RegisterMeta, Long>> addressRegisters = Maps.newConcurrentMap();
 
     private CuratorFramework curatorFramework;
 
     public ZookeeperRegisterService() {
+
     }
 
     @Override
@@ -69,10 +75,10 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                 switch (connectionState) {
                     case RECONNECTED: {
                         // 断线重连
-                        for (SubscribeMeta subscribeMeta : getConsumersServiceMetas()) {
+                        for (SubscribeMeta subscribeMeta : consumersServiceMetas) {
                             doSubscribe(subscribeMeta);
                         }
-                        for (RegisterMeta registerMeta : getProviderRegisterMetas()) {
+                        for (RegisterMeta registerMeta : providerRegisterMetas) {
                             doRegister(registerMeta);
                         }
                         doSubscribeGroup();
@@ -85,6 +91,37 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
         });
 
         curatorFramework.start();
+
+        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, r -> {
+            Thread thread = new Thread(r);
+            thread.setName("check pre register metas");
+            return thread;
+        });
+
+        executor.scheduleAtFixedRate(() -> {
+            for (RegisterMeta registerMeta : preProviderRegisterMetas) {
+                String directory = String.format("/providers/%s/%s/%s",
+                        registerMeta.getServiceMeta().getGroup(),
+                        registerMeta.getServiceMeta().getServiceProviderName(),
+                        registerMeta.getServiceMeta().getVersion()
+                );
+                String nodePath = String.format("%s/%s&%s&%s&%s",
+                        directory,
+                        registerMeta.getAddress(),
+                        registerMeta.getWeight(),
+                        registerMeta.getConnCount(),
+                        Arrays.toString(registerMeta.getMethods()).substring(1, Arrays.toString(registerMeta.getMethods()).length() - 1)
+                );
+                try {
+                    if (curatorFramework.checkExists().forPath(nodePath) == null) {
+                        doRegister(registerMeta);
+                    }
+                } catch (Exception e) {
+                    logger.warn("check path exists fail: {}, e: {}", directory, e.getMessage());
+                }
+
+            }
+        }, 500, 100, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -109,11 +146,8 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                     int resultCode = curatorEvent.getResultCode();
                     logger.info("zookeeper do register registerMeta: {} result: {}", registerMeta, resultCode);
                     if (KeeperException.Code.OK.intValue() == resultCode) {
-                        ZookeeperRegisterService.super.getProviderRegisterMetas().add(registerMeta);
-                    } else if (KeeperException.Code.NODEEXISTS.intValue() == resultCode) {
-                        logger.warn("zookeeper register warn registerMeta: {} result: {}", registerMeta, resultCode);
-                    } else {
-                        ZookeeperRegisterService.super.retryRegister(registerMeta);
+                        preProviderRegisterMetas.remove(registerMeta);
+                        providerRegisterMetas.add(registerMeta);
                     }
                 }
             }).forPath(String.format("%s/%s&%s&%s&%s",
@@ -207,8 +241,8 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                             case CHILD_ADDED: {
                                 RegisterMeta registerMeta = parseProviderPath(event.getData().getPath());
 
-                                ConcurrentSet<RegisterMeta> registerMetas = getRegisterMetas(registerMeta);
-                                registerMetas.add(registerMeta);
+                                ConcurrentMap<RegisterMeta, Long> registerMetas = getRegisterMetas(registerMeta);
+                                registerMetas.put(registerMeta, event.getData().getStat().getCzxid());
 
                                 ZookeeperRegisterService.super.notify(subscribeMeta.getServiceMeta(), NotifyEvent.ADD, registerMeta);
                                 break;
@@ -216,18 +250,28 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                             case CHILD_REMOVED: {
                                 RegisterMeta registerMeta = parseProviderPath(event.getData().getPath());
 
-                                ConcurrentSet<RegisterMeta> registerMetas = getRegisterMetas(registerMeta);
-                                registerMetas.remove(registerMeta);
+                                ConcurrentMap<RegisterMeta, Long> registerMetas = getRegisterMetas(registerMeta);
+                                Long zxId = registerMetas.get(registerMeta);
+                                Long curZxId = event.getData().getStat().getCzxid();
+                                if (zxId > curZxId) {
+                                    logger.warn("cur zxId {}, zxId: {}  cur zxId > zxId, so ignore CHILD_REMOVED, registerMeta:{}",
+                                            curZxId,
+                                            zxId,
+                                            registerMeta);
+                                    break;
+                                }
 
+                                registerMetas.remove(registerMeta);
                                 if (registerMetas.size() == 0) {
                                     logger.info("[OFFLINE_SERVICE] server: {} offline", registerMeta.getAddress());
-
                                     ZookeeperRegisterService.super.offline(registerMeta.getAddress());
                                 }
 
                                 ZookeeperRegisterService.super.notify(subscribeMeta.getServiceMeta(), NotifyEvent.REMOVE, registerMeta);
                                 break;
                             }
+                            default:
+                                //ignore
                         }
                     }
                 });
@@ -283,10 +327,10 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
         }
     }
 
-    private ConcurrentSet<RegisterMeta> getRegisterMetas(RegisterMeta registerMeta) {
-        ConcurrentSet<RegisterMeta> registerMetas = addressRegisters.get(registerMeta.getAddress());
+    private ConcurrentMap<RegisterMeta, Long> getRegisterMetas(RegisterMeta registerMeta) {
+        ConcurrentMap<RegisterMeta, Long> registerMetas = addressRegisters.get(registerMeta.getAddress());
         if (registerMetas == null) {
-            ConcurrentSet<RegisterMeta> newRegisterMetas = new ConcurrentSet<>();
+            ConcurrentMap<RegisterMeta, Long> newRegisterMetas = new ConcurrentHashMap<>();
             registerMetas = addressRegisters.putIfAbsent(registerMeta.getAddress(), newRegisterMetas);
             if (registerMetas == null) {
                 registerMetas = newRegisterMetas;

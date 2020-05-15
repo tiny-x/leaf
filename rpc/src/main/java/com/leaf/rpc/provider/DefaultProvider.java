@@ -4,6 +4,7 @@ import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.constants.Constants;
 import com.leaf.common.model.Directory;
 import com.leaf.register.api.model.RegisterMeta;
+import com.leaf.rpc.exector.DefaultThreadFactory;
 import com.leaf.rpc.local.ServiceWrapper;
 import com.leaf.common.utils.InetUtils;
 import com.leaf.register.api.RegisterFactory;
@@ -76,7 +77,7 @@ public class DefaultProvider implements Provider {
     @Override
     public void start() {
         this.server.start();
-        this.server.registerRequestProcess(new DefaultProviderProcessor(this), executorFactory.createExecutorService());
+        this.server.registerRequestProcess(new DefaultProviderProcessor(this), executorFactory.createExecutorService(new DefaultThreadFactory()));
     }
 
     @Override

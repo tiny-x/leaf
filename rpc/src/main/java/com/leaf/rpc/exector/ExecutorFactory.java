@@ -4,5 +4,10 @@ import java.util.concurrent.ExecutorService;
 
 public interface ExecutorFactory {
 
-    ExecutorService createExecutorService();
+    /**
+     *
+     * @param
+     * @return
+     */
+    ExecutorService createExecutorService(ProcessThreadFactory threadFactory);
 }

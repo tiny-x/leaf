@@ -33,10 +33,10 @@ public abstract class AbstractProxyFactory {
 
     private static final Logger logger = LoggerFactory.getLogger(AbstractProxyFactory.class);
 
-    protected static SerializerType serializerType;
+    protected static SerializerType defaultSerializerType;
 
     static {
-        serializerType = SerializerType.parse(
+        defaultSerializerType = SerializerType.parse(
                 (byte) SystemPropertyUtil.getInt("serializer.serializerType", SerializerType.PROTO_STUFF.value()));
     }
 
@@ -45,6 +45,8 @@ public abstract class AbstractProxyFactory {
     protected String serviceProviderName;
 
     protected String version;
+
+    protected SerializerType serializerType;
 
     protected List<UnresolvedAddress> addresses;
 
@@ -57,6 +59,10 @@ public abstract class AbstractProxyFactory {
     protected int retries = 0;
     protected DispatchType dispatchType = DispatchType.ROUND;
     protected LoadBalancerType loadBalancerType = LoadBalancerType.RANDOM;
+
+    public AbstractProxyFactory() {
+        this.serializerType = defaultSerializerType;
+    }
 
     public AbstractProxyFactory group(String group) {
         this.group = group;
@@ -153,15 +159,14 @@ public abstract class AbstractProxyFactory {
                         consumer.client()
                                 .group(registerMeta.getAddress())
                                 .setWeight(serviceMeta, registerMeta.getWeight());
-                        logger.info("add channel group, address: {}, serviceMeta: {}",  registerMeta.getAddress(), serviceMeta);
                         break;
                     }
                     case REMOVE: {
                         consumer.client().removeChannelGroup(serviceMeta, registerMeta.getAddress());
                         group.removeWeight(serviceMeta);
-                        logger.info("remove channel group, address: {}, serviceMeta: {}",  registerMeta.getAddress(), serviceMeta);
                         break;
                     }
+                    default:
                 }
             }
         });

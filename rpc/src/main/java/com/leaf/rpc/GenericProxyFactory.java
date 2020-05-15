@@ -20,6 +20,7 @@ public class GenericProxyFactory extends AbstractProxyFactory {
         return proxyFactory;
     }
 
+    @Override
     public GenericInvoke newProxy() {
         checkNotNull(group, "interfaceClass");
         checkNotNull(serviceProviderName, "serviceProviderName");
@@ -48,7 +49,5 @@ public class GenericProxyFactory extends AbstractProxyFactory {
         );
         return genericInvoke;
     }
-
-    
 
 }

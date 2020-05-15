@@ -14,6 +14,9 @@ import java.util.concurrent.ConcurrentMap;
 
 import static com.google.common.base.Preconditions.checkArgument;
 
+/**
+ * @author yefei
+ */
 public class DefaultRegisterService extends AbstractRegisterService implements RegisterService {
 
     private ConcurrentMap<UnresolvedAddress, DefaultRegisterClient> registerClients = new ConcurrentHashMap<>();
@@ -47,7 +50,7 @@ public class DefaultRegisterService extends AbstractRegisterService implements R
         for (Map.Entry<UnresolvedAddress, DefaultRegisterClient> register : registerClients.entrySet()) {
             register.getValue().register(registerMeta);
         }
-        getProviderRegisterMetas().add(registerMeta);
+        providerRegisterMetas.add(registerMeta);
     }
 
     @Override

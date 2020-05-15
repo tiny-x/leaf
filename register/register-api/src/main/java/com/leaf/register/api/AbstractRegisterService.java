@@ -3,6 +3,7 @@ package com.leaf.register.api;
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.concurrent.ConcurrentSet;
 import com.leaf.common.model.ServiceMeta;
+import com.leaf.common.utils.Collections;
 import com.leaf.register.api.model.RegisterMeta;
 import com.leaf.register.api.model.SubscribeMeta;
 import org.slf4j.Logger;
@@ -39,14 +40,19 @@ public abstract class AbstractRegisterService extends AbstractRetryRegisterServi
             new ConcurrentHashMap<>();
 
     /**
+     * 正在注册的服务
+     */
+    protected final ConcurrentSet<RegisterMeta> preProviderRegisterMetas = new ConcurrentSet<>();
+
+    /**
      * 已经注册的服务(断线重连是重连注册服务)
      */
-    private final ConcurrentSet<RegisterMeta> providerRegisterMetas = new ConcurrentSet<>();
+    protected final ConcurrentSet<RegisterMeta> providerRegisterMetas = new ConcurrentSet<>();
 
     /**
      * 已经订阅的服务
      */
-    private final ConcurrentSet<SubscribeMeta> consumersServiceMeta = new ConcurrentSet<>();
+    protected final ConcurrentSet<SubscribeMeta> consumersServiceMetas = new ConcurrentSet<>();
 
     public AbstractRegisterService() {
     }
@@ -54,6 +60,7 @@ public abstract class AbstractRegisterService extends AbstractRetryRegisterServi
     @Override
     public void register(RegisterMeta registerMeta) {
         logger.info("[REGISTER] register service: {}", registerMeta);
+        preProviderRegisterMetas.add(registerMeta);
         doRegister(registerMeta);
     }
 
@@ -68,7 +75,7 @@ public abstract class AbstractRegisterService extends AbstractRetryRegisterServi
     public void subscribe(SubscribeMeta subscribeMeta, NotifyListener notifyListener) {
         logger.info("[SUBSCRIBE] subscribe service: {}", subscribeMeta);
         subscribeListeners.put(subscribeMeta.getServiceMeta(), notifyListener);
-        consumersServiceMeta.add(subscribeMeta);
+        consumersServiceMetas.add(subscribeMeta);
         doSubscribe(subscribeMeta);
     }
 
@@ -96,8 +103,10 @@ public abstract class AbstractRegisterService extends AbstractRetryRegisterServi
         logger.info("[OFFLINE] provider offline: {}", address);
         // remove & notify
         CopyOnWriteArrayList<OfflineListener> offlineListenerList = offlineListeners.remove(address);
-        for (OfflineListener offlineListener : offlineListenerList) {
-            offlineListener.offline();
+        if (Collections.isNotEmpty(offlineListenerList)) {
+            for (OfflineListener offlineListener : offlineListenerList) {
+                offlineListener.offline();
+            }
         }
     }
 
@@ -146,7 +155,6 @@ public abstract class AbstractRegisterService extends AbstractRetryRegisterServi
     }
 
     public ConcurrentSet<SubscribeMeta> getConsumersServiceMetas() {
-        return consumersServiceMeta;
+        return consumersServiceMetas;
     }
-
 }

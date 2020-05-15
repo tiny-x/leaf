@@ -6,11 +6,6 @@ import com.leaf.common.annotation.ServiceInterface;
 import com.leaf.common.constants.Constants;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.common.utils.Proxies;
-import com.leaf.register.api.NotifyEvent;
-import com.leaf.register.api.NotifyListener;
-import com.leaf.register.api.OfflineListener;
-import com.leaf.register.api.model.RegisterMeta;
-import com.leaf.remoting.api.channel.ChannelGroup;
 import com.leaf.rpc.consumer.StrategyConfig;
 import com.leaf.rpc.consumer.dispatcher.Dispatcher;
 import com.leaf.rpc.consumer.invoke.DefaultInvoker;
@@ -35,6 +30,7 @@ public class DefaultProxyFactory extends AbstractProxyFactory {
         return defaultProxyFactory;
     }
 
+    @Override
     @SuppressWarnings("unchecked")
     public <T> T newProxy() {
 

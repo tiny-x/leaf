@@ -16,6 +16,7 @@ import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.future.DefaultInvokeFuture;
 import com.leaf.rpc.consumer.future.DefaultInvokeFutureGroup;
 import com.leaf.rpc.consumer.future.InvokeFuture;
+import com.leaf.rpc.exector.ProcessThread;
 import com.leaf.serialization.api.Serializer;
 import com.leaf.serialization.api.SerializerFactory;
 import com.leaf.serialization.api.SerializerType;
@@ -93,6 +94,9 @@ public abstract class AbstractDispatcher implements Dispatcher {
                                          InvokeType invokeType,
                                          ChannelGroup... channelGroup) throws Throwable {
         InvokeFuture<T> invokeFuture = null;
+        if (RpcContext.getTimeout() > 0L) {
+            this.timeoutMillis = RpcContext.getTimeout();
+        }
         switch (invokeType) {
             case SYNC: {
                 if (dispatchType == DispatchType.BROADCAST) {
@@ -114,7 +118,10 @@ public abstract class AbstractDispatcher implements Dispatcher {
                 throw new UnsupportedOperationException(errorMessage);
             }
         }
-        RpcContext.clearAttachments();
+        if (!(Thread.currentThread() instanceof ProcessThread)) {
+            RpcContext.clearAttachments();
+            RpcContext.resetTimeout();
+        }
         return invokeFuture;
     }
 
