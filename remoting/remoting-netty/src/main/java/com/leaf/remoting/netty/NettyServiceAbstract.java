@@ -32,14 +32,14 @@ public abstract class NettyServiceAbstract {
     protected final ConcurrentMap<Long, ResponseFuture<ResponseCommand>> responseTable =
             new ConcurrentHashMap(256);
 
-    protected final HashMap<Integer/* request code */, Pair<RequestProcessor, ExecutorService>> processorTable =
+    protected final HashMap<Integer/* request code */, Pair<RequestCommandProcessor, ExecutorService>> processorTable =
             new HashMap(64);
 
     protected final Semaphore semaphoreAsync;
 
     protected final Semaphore semaphoreOneWay;
 
-    protected final Pair<RequestProcessor, ExecutorService> defaultProcessor = new Pair();
+    protected final Pair<RequestCommandProcessor, ExecutorService> defaultProcessor = new Pair();
 
     protected final ChannelEventExecutor channelEventExecutor = new ChannelEventExecutor();
 
@@ -136,64 +136,23 @@ public abstract class NettyServiceAbstract {
 
     private void processRequestCommand(ChannelHandlerContext ctx, RequestCommand cmd) {
         Serializer serializer = SerializerFactory.serializer(SerializerType.parse(cmd.getSerializerCode()));
-        ResponseWrapper responseWrapper = new ResponseWrapper();
 
         if (defaultProcessor.getA() != null && defaultProcessor.getB() != null) {
             try {
                 defaultProcessor.getB().submit(new Runnable() {
                     @Override
                     public void run() {
-                        ResponseCommand responseCommand = null;
-                        if (defaultProcessor.getA().rejectRequest()) {
-                            String message = "[REJECT_REQUEST] system busy, start flow control for a while";
-                            responseWrapper.setResult(message);
-                            logger.warn(message);
-                            if (!cmd.isOneWay()) {
-                                responseCommand = RemotingCommandFactory.createResponseCommand(
-                                        cmd.getSerializerCode(),
-                                        serializer.serialize(responseWrapper),
-                                        cmd.getInvokeId()
-                                );
-                                responseCommand.setStatus(ResponseStatus.FLOW_CONTROL.value());
-                            }
-                        } else {
-                            responseCommand = defaultProcessor.getA().process(ctx, cmd);
-                        }
-                        if (responseCommand != null) {
-                            ctx.channel().writeAndFlush(responseCommand);
-                        }
+                        ResponseCommand responseCommand = defaultProcessor.getA().process(ctx, cmd);
+                        ctx.channel().writeAndFlush(responseCommand);
                     }
                 });
             } catch (RejectedExecutionException e) {
-
-                String message = "[OVERLOAD]system busy, start flow control for a while";
-                responseWrapper.setResult(message);
-                logger.error(message, e);
-
-                if (!cmd.isOneWay()) {
-                    ResponseCommand responseCommand = RemotingCommandFactory.createResponseCommand(
-                            cmd.getSerializerCode(),
-                            serializer.serialize(responseWrapper),
-                            cmd.getInvokeId()
-                    );
-                    responseCommand.setStatus(ResponseStatus.SYSTEM_BUSY.value());
-                    ctx.channel().writeAndFlush(responseCommand);
-                }
+                ResponseCommand responseCommand = defaultProcessor.getA().process(ctx, cmd, e);
+                ctx.channel().writeAndFlush(responseCommand);
             }
         } else {
             String message = "[ERROR]system error, request process not register";
-            responseWrapper.setResult(message);
             logger.error(ctx.channel() + message);
-
-            if (!cmd.isOneWay()) {
-                ResponseCommand responseCommand = RemotingCommandFactory.createResponseCommand(
-                        cmd.getSerializerCode(),
-                        serializer.serialize(responseWrapper),
-                        cmd.getInvokeId()
-                );
-                responseCommand.setStatus(ResponseStatus.SERVER_ERROR.value());
-                ctx.channel().writeAndFlush(responseCommand);
-            }
         }
     }
 

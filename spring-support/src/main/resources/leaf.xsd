@@ -24,7 +24,7 @@
 
                 <xsd:attribute name="registerType" type="xsd:string" use="required">
                     <xsd:annotation>
-                        <xsd:documentation><![CDATA[ The provider registerType. ]]></xsd:documentation>
+                        <xsd:documentation><![CDATA[ The leafServer registerType. ]]></xsd:documentation>
                     </xsd:annotation>
                 </xsd:attribute>
             </xsd:extension>
@@ -34,7 +34,7 @@
     <xsd:complexType name="providerPropertyType">
         <xsd:attribute name="port" type="xsd:int" use="optional">
             <xsd:annotation>
-                <xsd:documentation><![CDATA[ The provider port. ]]></xsd:documentation>
+                <xsd:documentation><![CDATA[ The leafServer port. ]]></xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
 
@@ -54,7 +54,7 @@
 
                 <xsd:attribute name="registerType" type="xsd:string" use="required">
                     <xsd:annotation>
-                        <xsd:documentation><![CDATA[ The provider registerType. ]]></xsd:documentation>
+                        <xsd:documentation><![CDATA[ The leafServer registerType. ]]></xsd:documentation>
                     </xsd:annotation>
                 </xsd:attribute>
             </xsd:extension>
@@ -82,7 +82,7 @@
                     </xsd:annotation>
                 </xsd:attribute>
 
-                <xsd:attribute name="provider" type="xsd:string" use="required">
+                <xsd:attribute name="leafServer" type="xsd:string" use="required">
                     <xsd:annotation>
                         <xsd:documentation><![CDATA[ The service belong to which server. ]]></xsd:documentation>
                     </xsd:annotation>
@@ -123,7 +123,7 @@
 
         <xsd:attribute name="weight" type="xsd:int" use="optional">
             <xsd:annotation>
-                <xsd:documentation><![CDATA[ The provider service weight. ]]></xsd:documentation>
+                <xsd:documentation><![CDATA[ The leafServer service weight. ]]></xsd:documentation>
             </xsd:annotation>
         </xsd:attribute>
 
@@ -210,7 +210,7 @@
     </xsd:complexType>
 
 
-    <xsd:element name="provider" type="providerType"/>
+    <xsd:element name="leafServer" type="providerType"/>
     <xsd:element name="consumer" type="consumerType"/>
     <xsd:element name="reference" type="referenceType"/>
     <xsd:element name="service" type="serviceType"/>

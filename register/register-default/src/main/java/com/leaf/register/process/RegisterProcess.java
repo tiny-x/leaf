@@ -1,6 +1,6 @@
 package com.leaf.register.process;
 
-import com.leaf.remoting.api.ProtocolHead;
+import com.leaf.remoting.api.*;
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.concurrent.ConcurrentSet;
 import com.leaf.common.constants.Constants;
@@ -12,10 +12,6 @@ import com.leaf.register.DefaultRegisterServer;
 import com.leaf.register.api.NotifyEvent;
 import com.leaf.register.api.model.Message;
 import com.leaf.register.api.model.SubscribeMeta;
-import com.leaf.remoting.api.ChannelEventAdapter;
-import com.leaf.remoting.api.InvokeCallback;
-import com.leaf.remoting.api.RemotingCommandFactory;
-import com.leaf.remoting.api.RequestProcessor;
 import com.leaf.remoting.api.future.ResponseFuture;
 import com.leaf.remoting.api.payload.RequestCommand;
 import com.leaf.remoting.api.payload.ResponseCommand;
@@ -38,7 +34,7 @@ import java.util.concurrent.*;
 
 import static com.leaf.remoting.api.ProtocolHead.*;
 
-public class RegisterProcess implements RequestProcessor {
+public class RegisterProcess implements RequestCommandProcessor {
 
     private static final Logger logger = LoggerFactory.getLogger(RegisterProcess.class);
     private static final SerializerType serializerType;
@@ -113,6 +109,11 @@ public class RegisterProcess implements RequestProcessor {
             default:
                 throw new UnsupportedOperationException("RegisterProcess Unsupported MessageCode: " + request.getMessageCode());
         }
+    }
+
+    @Override
+    public ResponseCommand process(ChannelHandlerContext context, RequestCommand request, Throwable e) {
+        return null;
     }
 
     // 查找服务
@@ -230,11 +231,6 @@ public class RegisterProcess implements RequestProcessor {
         );
 
         return responseCommand;
-    }
-
-    @Override
-    public boolean rejectRequest() {
-        return false;
     }
 
 

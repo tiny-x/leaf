@@ -2,8 +2,8 @@ package com.leaf.spring.init.bean;
 
 import com.google.common.base.Strings;
 import com.leaf.register.api.RegisterType;
-import com.leaf.rpc.provider.DefaultProvider;
-import com.leaf.rpc.provider.Provider;
+import com.leaf.rpc.provider.DefaultLeafServer;
+import com.leaf.rpc.provider.LeafServer;
 import org.springframework.beans.factory.InitializingBean;
 
 public class ProviderFactoryBean implements InitializingBean {
@@ -14,7 +14,7 @@ public class ProviderFactoryBean implements InitializingBean {
 
     private String registryServer;
 
-    private Provider provider;
+    private LeafServer leafServer;
 
     private String group;
 
@@ -25,17 +25,17 @@ public class ProviderFactoryBean implements InitializingBean {
     @Override
     public void afterPropertiesSet() throws Exception {
         if (port == null && registerType == null) {
-            provider = new DefaultProvider();
+            leafServer = new DefaultLeafServer();
         } else if (port == null) {
-            provider = new DefaultProvider(registerType);
+            leafServer = new DefaultLeafServer(registerType);
         } else {
-            provider = new DefaultProvider(port, registerType);
+            leafServer = new DefaultLeafServer(port, registerType);
         }
 
         if (!Strings.isNullOrEmpty(registryServer)) {
-            provider.connectToRegistryServer(registryServer);
+            leafServer.connectToRegistryServer(registryServer);
         }
-        provider.start();
+        leafServer.start();
     }
 
     public Integer getPort() {
@@ -54,8 +54,8 @@ public class ProviderFactoryBean implements InitializingBean {
         this.registryServer = registryServer;
     }
 
-    public Provider getProvider() {
-        return provider;
+    public LeafServer getLeafServer() {
+        return leafServer;
     }
 
     public String getGroup() {

@@ -1,11 +1,13 @@
 package com.leaf.rpc.provider;
 
 import com.leaf.common.model.Directory;
+import com.leaf.remoting.api.RequestCommandProcessor;
 import com.leaf.rpc.local.ServiceWrapper;
 import com.leaf.rpc.controller.FlowController;
 import com.leaf.rpc.local.ServiceRegistry;
+import com.leaf.rpc.provider.process.RequestProcessFilter;
 
-public interface Provider {
+public interface LeafServer {
 
     /**
      * 启动
@@ -42,13 +44,17 @@ public interface Provider {
     void publishService(ServiceWrapper serviceWrapper);
 
     /**
-     * 注册全局流量控制器
      *
+     * @param requestProcessFilter
+     */
+    void addRequestProcessFilter(RequestProcessFilter requestProcessFilter);
+
+    /**
+     * 注册全局流量控制器
      */
     void registerGlobalFlowController(FlowController... flowControllers);
 
     /**
-     *
      * @return
      */
     FlowController[] globalFlowController();

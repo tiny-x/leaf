@@ -5,12 +5,12 @@
 
     <bean id="helloService" class="com.leaf.example.spring.HelloServiceImpl"/>
 
-    <leaf:provider id="provider" registerType="ZOOKEEPER">
+    <leaf:leafServer id="leafServer" registerType="ZOOKEEPER">
         <leaf:property port="9180" />
         <leaf:property registryServer="127.0.0.1:2181"/>
-    </leaf:provider>
+    </leaf:leafServer>
 
-    <leaf:service id="helloServiceProvider" provider="provider" interfaceClass="com.leaf.example.spring.HelloService" ref="helloService">
+    <leaf:service id="helloServiceProvider" leafServer="leafServer" interfaceClass="com.leaf.example.spring.HelloService" ref="helloService">
         <leaf:property weight="60"/>
         <!-- default leaf -->
         <leaf:property group="spring-demo"/>

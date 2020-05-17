@@ -2,7 +2,7 @@ package com.leaf.rpc.consumer.invoke;
 
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.common.utils.Reflects;
-import com.leaf.remoting.api.RequestWrapper;
+import com.leaf.rpc.provider.process.RequestWrapper;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.StrategyConfig;
 import com.leaf.rpc.consumer.cluster.ClusterInvoker;

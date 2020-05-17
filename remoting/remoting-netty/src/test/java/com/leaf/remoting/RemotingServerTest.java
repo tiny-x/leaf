@@ -1,11 +1,7 @@
 package com.leaf.remoting;
 
-import com.leaf.remoting.api.ProtocolHead;
+import com.leaf.remoting.api.*;
 import com.leaf.common.UnresolvedAddress;
-import com.leaf.remoting.api.RemotingCommandFactory;
-import com.leaf.remoting.api.RequestProcessor;
-import com.leaf.remoting.api.RemotingClient;
-import com.leaf.remoting.api.RemotingServer;
 import com.leaf.remoting.api.payload.RequestCommand;
 import com.leaf.remoting.api.payload.ResponseCommand;
 import com.leaf.remoting.netty.NettyClient;
@@ -35,7 +31,7 @@ public class RemotingServerTest {
 
     @Test
     public void testInvokeSync() throws Exception {
-        rpcServer.registerRequestProcess(new RequestProcessor() {
+        rpcServer.registerRequestProcess(new RequestCommandProcessor() {
             @Override
             public ResponseCommand process(ChannelHandlerContext context, RequestCommand request) {
                 String info = "hi client";
@@ -51,8 +47,8 @@ public class RemotingServerTest {
             }
 
             @Override
-            public boolean rejectRequest() {
-                return false;
+            public ResponseCommand process(ChannelHandlerContext context, RequestCommand request, Throwable e) {
+                return null;
             }
         }, Executors.newCachedThreadPool());
 
@@ -69,7 +65,7 @@ public class RemotingServerTest {
 
     @Test
     public void testInvokeAsync() throws Exception {
-        rpcServer.registerRequestProcess(new RequestProcessor() {
+        rpcServer.registerRequestProcess(new RequestCommandProcessor() {
             @Override
             public ResponseCommand process(ChannelHandlerContext context, RequestCommand request) {
                 String info = "hi client";
@@ -84,8 +80,8 @@ public class RemotingServerTest {
             }
 
             @Override
-            public boolean rejectRequest() {
-                return false;
+            public ResponseCommand process(ChannelHandlerContext context, RequestCommand request, Throwable e) {
+                return null;
             }
         }, Executors.newCachedThreadPool());
 

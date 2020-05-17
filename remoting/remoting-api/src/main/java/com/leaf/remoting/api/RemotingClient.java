@@ -49,7 +49,7 @@ public interface RemotingClient extends RemotingService {
     void invokeOneWay(final UnresolvedAddress address, final RequestCommand request, long timeoutMillis)
             throws RemotingException, InterruptedException;
 
-    void registerRequestProcess(RequestProcessor requestProcessor, ExecutorService executor);
+    void registerRequestProcess(RequestCommandProcessor requestCommandProcessor, ExecutorService executor);
 
     void cancelReconnect(UnresolvedAddress address);
 }

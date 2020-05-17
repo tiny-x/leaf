@@ -1,7 +1,7 @@
 package com.leaf.rpc.consumer.dispatcher;
 
 import com.leaf.common.context.RpcContext;
-import com.leaf.remoting.api.ResponseWrapper;
+import com.leaf.rpc.provider.process.ResponseWrapper;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.remoting.api.InvokeCallback;
 import com.leaf.remoting.api.ResponseStatus;

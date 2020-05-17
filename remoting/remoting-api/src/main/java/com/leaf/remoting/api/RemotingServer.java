@@ -17,6 +17,6 @@ public interface RemotingServer extends RemotingService {
     void invokeOneWay(final Channel channel, final RequestCommand request, long timeoutMillis)
             throws RemotingException, InterruptedException;
 
-    void registerRequestProcess(RequestProcessor requestProcessor, ExecutorService executor);
+    void registerRequestProcess(RequestCommandProcessor requestCommandProcessor, ExecutorService executor);
 
 }

@@ -1,6 +1,6 @@
 package com.leaf.rpc.consumer.dispatcher;
 
-import com.leaf.remoting.api.RequestWrapper;
+import com.leaf.rpc.provider.process.RequestWrapper;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.future.InvokeFuture;
 

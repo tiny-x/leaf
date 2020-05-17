@@ -37,5 +37,6 @@ public class ConsumerExample {
 
     public void invoke() {
         String s = helloService.sayHello(" biu biu biu!!!");
+        System.out.println(s);
     }
 }

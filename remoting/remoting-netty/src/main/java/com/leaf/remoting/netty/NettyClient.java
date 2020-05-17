@@ -228,8 +228,8 @@ public class NettyClient extends NettyServiceAbstract implements RemotingClient 
     }
 
     @Override
-    public void registerRequestProcess(RequestProcessor requestProcessor, ExecutorService executor) {
-        defaultProcessor.setA(requestProcessor);
+    public void registerRequestProcess(RequestCommandProcessor requestCommandProcessor, ExecutorService executor) {
+        defaultProcessor.setA(requestCommandProcessor);
         defaultProcessor.setB(executor);
     }
 

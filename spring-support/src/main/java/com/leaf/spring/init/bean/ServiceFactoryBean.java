@@ -2,7 +2,7 @@ package com.leaf.spring.init.bean;
 
 import com.leaf.rpc.local.ServiceWrapper;
 import com.leaf.rpc.local.ServiceRegistry;
-import com.leaf.rpc.provider.Provider;
+import com.leaf.rpc.provider.LeafServer;
 import org.springframework.beans.factory.InitializingBean;
 
 import static com.google.common.base.Preconditions.checkNotNull;
@@ -28,11 +28,11 @@ public class ServiceFactoryBean implements InitializingBean {
     @Override
     public void afterPropertiesSet() throws Exception {
         checkNotNull(provider, "provider");
-        Provider _provider = provider.getProvider();
+        LeafServer _Leaf_provider = provider.getLeafServer();
         if (group == null)
             group = provider.getGroup();
 
-        ServiceRegistry serviceRegistry = _provider.serviceRegistry()
+        ServiceRegistry serviceRegistry = _Leaf_provider.serviceRegistry()
                 .provider(ref)
                 .group(group)
                 .interfaceClass(interfaceClass)
@@ -46,7 +46,7 @@ public class ServiceFactoryBean implements InitializingBean {
 
         ServiceWrapper serviceWrapper = serviceRegistry
                 .register();
-        _provider.publishService(serviceWrapper);
+        _Leaf_provider.publishService(serviceWrapper);
     }
 
     public void setGroup(String group) {

@@ -3,7 +3,7 @@ package com.leaf.remoting.netty;
 import com.leaf.remoting.api.ChannelEventListener;
 import com.leaf.remoting.api.InvokeCallback;
 import com.leaf.remoting.api.RemotingServer;
-import com.leaf.remoting.api.RequestProcessor;
+import com.leaf.remoting.api.RequestCommandProcessor;
 import com.leaf.remoting.api.exception.RemotingException;
 import com.leaf.remoting.api.payload.ByteHolder;
 import com.leaf.remoting.api.payload.RequestCommand;
@@ -99,8 +99,8 @@ public class NettyServer extends NettyServiceAbstract implements RemotingServer 
     }
 
     @Override
-    public void registerRequestProcess(RequestProcessor requestProcessor, ExecutorService executor) {
-        defaultProcessor.setA(requestProcessor);
+    public void registerRequestProcess(RequestCommandProcessor requestCommandProcessor, ExecutorService executor) {
+        defaultProcessor.setA(requestCommandProcessor);
         defaultProcessor.setB(executor);
     }
 

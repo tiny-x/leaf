@@ -1,6 +1,8 @@
 package com.leaf.common.utils;
 
+import com.google.common.base.Strings;
 import com.leaf.common.UnresolvedAddress;
+import com.leaf.common.constants.Constants;
 
 import java.net.InetAddress;
 import java.net.UnknownHostException;
@@ -8,11 +10,14 @@ import java.net.UnknownHostException;
 public class InetUtils {
 
     public static String getLocalHost() {
-        String hostAddress = null;
-        try {
-            hostAddress = InetAddress.getLocalHost().getHostAddress();
-        } catch (UnknownHostException e) {
-            e.printStackTrace();
+        String hostAddress = SystemPropertiesUtils.getEnvOrPropertiesValue(Constants.LEAF_PROVIDER_REGISTER_ADDRESS_KEY);
+        if (Strings.isNullOrEmpty(hostAddress)) {
+            try {
+                hostAddress = InetAddress.getLocalHost().getHostAddress();
+            } catch (UnknownHostException e) {
+                e.printStackTrace();
+            }
+            return hostAddress;
         }
         return hostAddress;
     }

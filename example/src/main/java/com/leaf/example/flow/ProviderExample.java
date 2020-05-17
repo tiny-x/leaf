@@ -3,8 +3,8 @@ package com.leaf.example.flow;
 import com.leaf.rpc.local.ServiceWrapper;
 import com.leaf.remoting.netty.NettyServerConfig;
 import com.leaf.rpc.controller.FlowController;
-import com.leaf.rpc.provider.DefaultProvider;
-import com.leaf.rpc.provider.Provider;
+import com.leaf.rpc.provider.DefaultLeafServer;
+import com.leaf.rpc.provider.LeafServer;
 
 import java.util.concurrent.RejectedExecutionException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -13,9 +13,9 @@ public class ProviderExample {
 
     public static void main(String[] args) {
         NettyServerConfig config = new NettyServerConfig();
-        Provider provider = new DefaultProvider(config);
-        provider.start();
-        provider.registerGlobalFlowController(new FlowController() {
+        LeafServer leafServer = new DefaultLeafServer(config);
+        leafServer.start();
+        leafServer.registerGlobalFlowController(new FlowController() {
 
             private AtomicInteger atomicInteger = new AtomicInteger(0);
 
@@ -30,7 +30,7 @@ public class ProviderExample {
         HelloService helloService = new HelloServiceImpl();
 
         // 注册到本地容器 未发布到注册中心
-        ServiceWrapper serviceWrapper = provider.serviceRegistry()
+        ServiceWrapper serviceWrapper = leafServer.serviceRegistry()
                 .provider(helloService)
                 .interfaceClass(HelloService.class)
                 .providerName("org.rpc.example.demo.HelloService")

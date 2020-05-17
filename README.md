@@ -30,12 +30,12 @@ public interface HelloService {
 ```` xml
     <bean id="helloService" class="com.leaf.example.spring.HelloServiceImpl"/>
 
-    <leaf:provider id="provider" registerType="DEFAULT">
+    <leaf:leafServer id="leafServer" registerType="DEFAULT">
         <leaf:property port="9180" />
         <leaf:property registryServer="127.0.0.1:9876"/>
-    </leaf:provider>
+    </leaf:leafServer>
 
-    <leaf:service id="helloServiceProvider" provider="provider" interfaceClass="com.leaf.example.spring.HelloService" ref="helloService">
+    <leaf:service id="helloServiceProvider" leafServer="leafServer" interfaceClass="com.leaf.example.spring.HelloService" ref="helloService">
         <leaf:property weight="60"/>
         <!-- default leaf -->
         <leaf:property group="spring-demo"/>
@@ -97,7 +97,7 @@ public class RegisterServerExample {
 public class ProviderExample {
 
     public static void main(String[] args) {
-        new ClassPathXmlApplicationContext("classpath:/spring/spring-provider.xml");
+        new ClassPathXmlApplicationContext("classpath:/spring/spring-leafServer.xml");
     }
 }
 ````

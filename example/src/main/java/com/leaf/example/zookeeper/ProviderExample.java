@@ -4,8 +4,8 @@ import com.leaf.rpc.local.ServiceWrapper;
 import com.leaf.example.register.HelloService;
 import com.leaf.example.register.HelloServiceImpl;
 import com.leaf.register.api.RegisterType;
-import com.leaf.rpc.provider.DefaultProvider;
-import com.leaf.rpc.provider.Provider;
+import com.leaf.rpc.provider.DefaultLeafServer;
+import com.leaf.rpc.provider.LeafServer;
 
 import java.util.concurrent.CountDownLatch;
 
@@ -15,25 +15,25 @@ public class ProviderExample {
 
         HelloService helloService = new HelloServiceImpl();
 
-        Provider[] providers = new DefaultProvider[]{
-                new DefaultProvider(9180, RegisterType.ZOOKEEPER),
-                new DefaultProvider(9181, RegisterType.ZOOKEEPER),
-                new DefaultProvider(9182, RegisterType.ZOOKEEPER)
+        LeafServer[] leafServers = new DefaultLeafServer[]{
+                new DefaultLeafServer(9180, RegisterType.ZOOKEEPER),
+                new DefaultLeafServer(9181, RegisterType.ZOOKEEPER),
+                new DefaultLeafServer(9182, RegisterType.ZOOKEEPER)
         };
 
-        CountDownLatch countDownLatch = new CountDownLatch(providers.length);
+        CountDownLatch countDownLatch = new CountDownLatch(leafServers.length);
 
-        for (Provider provider : providers) {
+        for (LeafServer leafServer : leafServers) {
             new Thread(new Runnable() {
                 @Override
                 public void run() {
-                    provider.start();
+                    leafServer.start();
                     // 注册到本地容器 未发布到注册中心
-                    ServiceWrapper serviceWrapper = provider.serviceRegistry()
+                    ServiceWrapper serviceWrapper = leafServer.serviceRegistry()
                             .provider(helloService)
                             .register();
-                    provider.connectToRegistryServer("zookeeper.dev.xianglin.com");
-                    provider.publishService(serviceWrapper);
+                    leafServer.connectToRegistryServer("zookeeper.dev.xianglin.com");
+                    leafServer.publishService(serviceWrapper);
                     countDownLatch.countDown();
                 }
             }).start();

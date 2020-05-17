@@ -213,7 +213,7 @@ public class DefaultRegisterClient {
         }
     }
 
-    class RegisterClientProcess implements RequestProcessor {
+    class RegisterClientProcess implements RequestCommandProcessor {
 
         @Override
         public ResponseCommand process(ChannelHandlerContext context, RequestCommand request) {
@@ -244,8 +244,8 @@ public class DefaultRegisterClient {
         }
 
         @Override
-        public boolean rejectRequest() {
-            return false;
+        public ResponseCommand process(ChannelHandlerContext context, RequestCommand request, Throwable e) {
+            return null;
         }
     }
 

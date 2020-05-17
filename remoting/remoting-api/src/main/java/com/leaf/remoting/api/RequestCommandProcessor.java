@@ -5,9 +5,10 @@ import com.leaf.remoting.api.payload.ResponseCommand;
 import io.netty.channel.ChannelHandlerContext;
 
 
-public interface RequestProcessor {
+public interface RequestCommandProcessor {
 
     ResponseCommand process(ChannelHandlerContext context, RequestCommand request);
 
-    boolean rejectRequest();
+    ResponseCommand process(ChannelHandlerContext context, RequestCommand request, Throwable e);
+
 }

@@ -1,4 +1,4 @@
-package com.leaf.remoting.api;
+package com.leaf.rpc.provider.process;
 
 import com.leaf.common.model.ServiceMeta;
 
@@ -19,9 +19,19 @@ public class RequestWrapper implements Serializable {
 
     private String methodName;
 
+    private boolean isJsonArgs;
+
     private Object[] args;
 
     private Map<String, String> attachment;
+
+    public boolean isJsonArgs() {
+        return isJsonArgs;
+    }
+
+    public void setJsonArgs(boolean jsonArgs) {
+        isJsonArgs = jsonArgs;
+    }
 
     public ServiceMeta getServiceMeta() {
         return serviceMeta;

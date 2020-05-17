@@ -24,6 +24,7 @@ public class Constants {
 
     public static final long DEFAULT_RESNED_INTERVAL = 2000L;
 
+    public static final String LEAF_PROVIDER_REGISTER_ADDRESS_KEY  = "leaf.provider.register.address";
 
 
 }
