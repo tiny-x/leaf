@@ -32,7 +32,7 @@ public class ProviderExample {
                     ServiceWrapper serviceWrapper = leafServer.serviceRegistry()
                             .provider(helloService)
                             .register();
-                    leafServer.connectToRegistryServer("zookeeper.dev.xianglin.com");
+                    leafServer.connectToRegistryServer("121.43.175.216:2181");
                     leafServer.publishService(serviceWrapper);
                     countDownLatch.countDown();
                 }

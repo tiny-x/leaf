@@ -10,7 +10,7 @@ public class ConsumerExample {
 
     public static void main(String[] args) throws InterruptedException {
         Consumer consumer = new DefaultConsumer("consumer", RegisterType.ZOOKEEPER);
-        consumer.connectToRegistryServer("zookeeper.dev.xianglin.com:2181");
+        consumer.connectToRegistryServer("121.43.175.216:2181");
 
         HelloService helloService = DefaultProxyFactory.factory(HelloService.class)
                 .consumer(consumer)
