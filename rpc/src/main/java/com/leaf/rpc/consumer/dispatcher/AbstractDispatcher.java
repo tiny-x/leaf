@@ -1,7 +1,6 @@
 package com.leaf.rpc.consumer.dispatcher;
 
 import com.leaf.common.context.RpcContext;
-import com.leaf.rpc.provider.process.ResponseWrapper;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.remoting.api.InvokeCallback;
 import com.leaf.remoting.api.ResponseStatus;
@@ -11,43 +10,47 @@ import com.leaf.remoting.api.future.ResponseFuture;
 import com.leaf.remoting.api.payload.RequestCommand;
 import com.leaf.remoting.api.payload.ResponseCommand;
 import com.leaf.rpc.balancer.LoadBalancer;
-import com.leaf.rpc.consumer.Consumer;
+import com.leaf.rpc.consumer.LeafClient;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.future.DefaultInvokeFuture;
 import com.leaf.rpc.consumer.future.DefaultInvokeFutureGroup;
 import com.leaf.rpc.consumer.future.InvokeFuture;
 import com.leaf.rpc.exector.ProcessThread;
+import com.leaf.rpc.provider.process.ResponseWrapper;
 import com.leaf.serialization.api.Serializer;
 import com.leaf.serialization.api.SerializerFactory;
 import com.leaf.serialization.api.SerializerType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.List;
 
 import static com.google.common.base.Preconditions.checkState;
 
+/**
+ * @author yefei
+ */
 public abstract class AbstractDispatcher implements Dispatcher {
 
     private final static Logger logger = LoggerFactory.getLogger(AbstractDispatcher.class);
 
     protected long timeoutMillis;
-    private Consumer consumer;
+    private LeafClient leafClient;
     private LoadBalancer loadBalancer;
     private SerializerType serializerType;
 
-    public AbstractDispatcher(Consumer consumer, SerializerType serializerType) {
-        this(consumer, null, serializerType);
+    public AbstractDispatcher(LeafClient leafClient, SerializerType serializerType) {
+        this(leafClient, null, serializerType);
     }
 
-    public AbstractDispatcher(Consumer consumer, LoadBalancer loadBalancer, SerializerType serializerType) {
-        this.consumer = consumer;
+    public AbstractDispatcher(LeafClient leafClient, LoadBalancer loadBalancer, SerializerType serializerType) {
+        this.leafClient = leafClient;
         this.loadBalancer = loadBalancer;
         this.serializerType = serializerType;
     }
 
     protected ChannelGroup select(ServiceMeta metadata) {
-        CopyOnWriteArrayList<ChannelGroup> groups = consumer.client().directory(metadata);
+        List<ChannelGroup> groups = leafClient.client().directory(metadata);
 
         ChannelGroup group = loadBalancer.select(groups, metadata);
 
@@ -66,7 +69,7 @@ public abstract class AbstractDispatcher implements Dispatcher {
     }
 
     protected ChannelGroup[] groups(ServiceMeta metadata) {
-        CopyOnWriteArrayList<ChannelGroup> channelGroups = consumer.client().directory(metadata);
+        List<ChannelGroup> channelGroups = leafClient.client().directory(metadata);
         checkState(channelGroups.size() > 0, metadata + " no channel");
 
         ChannelGroup[] channelGroupsArray = new ChannelGroup[channelGroups.size()];
@@ -127,7 +130,7 @@ public abstract class AbstractDispatcher implements Dispatcher {
 
     private <T> InvokeFuture<T> invokeSync(RequestCommand requestCommand, Class<T> returnType, ChannelGroup channelGroup) throws Throwable {
         InvokeFuture<T> invokeFuture = new DefaultInvokeFuture<>(returnType, timeoutMillis);
-        ResponseCommand responseCommand = consumer
+        ResponseCommand responseCommand = leafClient
                 .client()
                 .invokeSync(channelGroup.remoteAddress(),
                         requestCommand,
@@ -148,7 +151,7 @@ public abstract class AbstractDispatcher implements Dispatcher {
         switch (dispatchType) {
             case ROUND: {
                 invokeFuture = new DefaultInvokeFuture<T>(returnType, timeoutMillis);
-                consumer.client().invokeAsync(
+                leafClient.client().invokeAsync(
                         channelGroup[0].remoteAddress(),
                         requestCommand,
                         timeoutMillis,
@@ -160,7 +163,7 @@ public abstract class AbstractDispatcher implements Dispatcher {
                 invokeFuture = new DefaultInvokeFutureGroup(futures);
                 for (int i = 0; i < channelGroup.length; i++) {
                     futures[i] = new DefaultInvokeFuture<T>(returnType, timeoutMillis);
-                    consumer.client().invokeAsync(
+                    leafClient.client().invokeAsync(
                             channelGroup[i].remoteAddress(),
                             requestCommand.clone(),
                             timeoutMillis,
@@ -180,14 +183,14 @@ public abstract class AbstractDispatcher implements Dispatcher {
     private void invokeOneWay(RequestCommand requestCommand, DispatchType dispatchType, ChannelGroup... channelGroup) throws Throwable {
         switch (dispatchType) {
             case ROUND: {
-                consumer.client().invokeOneWay(channelGroup[0].remoteAddress(),
+                leafClient.client().invokeOneWay(channelGroup[0].remoteAddress(),
                         requestCommand,
                         timeoutMillis);
                 break;
             }
             case BROADCAST: {
                 for (int i = 0; i < channelGroup.length; i++) {
-                    consumer.client().invokeOneWay(channelGroup[i].remoteAddress(),
+                    leafClient.client().invokeOneWay(channelGroup[i].remoteAddress(),
                             requestCommand.clone(),
                             timeoutMillis);
                 }

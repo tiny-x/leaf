@@ -3,13 +3,20 @@ package com.leaf.rpc.balancer;
 import com.leaf.common.model.Directory;
 import com.leaf.remoting.api.channel.ChannelGroup;
 
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.List;
 
 
 /**
  * 软负载均衡
+ * @author yefei
  */
 public interface LoadBalancer {
 
-    ChannelGroup select(CopyOnWriteArrayList<ChannelGroup> list, Directory directory);
+    /**
+     * select
+     * @param list
+     * @param directory
+     * @return
+     */
+    ChannelGroup select(List<ChannelGroup> list, Directory directory);
 }

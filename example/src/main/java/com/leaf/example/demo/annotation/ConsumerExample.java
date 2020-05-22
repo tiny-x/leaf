@@ -2,8 +2,8 @@ package com.leaf.example.demo.annotation;
 
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.rpc.DefaultProxyFactory;
-import com.leaf.rpc.consumer.Consumer;
-import com.leaf.rpc.consumer.DefaultConsumer;
+import com.leaf.rpc.consumer.DefaultLeafClient;
+import com.leaf.rpc.consumer.LeafClient;
 
 import java.util.List;
 
@@ -12,13 +12,13 @@ public class ConsumerExample {
     private static UserService userService;
 
     static {
-        Consumer consumer = new DefaultConsumer("consumer");
+        LeafClient leafClient = new DefaultLeafClient("consumer");
         UnresolvedAddress address = new UnresolvedAddress("127.0.0.1", 9180);
-        consumer.connect(address);
-        consumer.connect(address);
+        leafClient.connect(address);
+        leafClient.connect(address);
 
         userService = DefaultProxyFactory.factory(UserService.class)
-                .consumer(consumer)
+                .consumer(leafClient)
                 .providers(address)
                 .timeMillis(3000L)
                 .newProxy();

@@ -1,6 +1,5 @@
 package com.leaf.register;
 
-import com.leaf.remoting.api.ProtocolHead;
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.concurrent.ConcurrentSet;
 import com.leaf.common.constants.Constants;
@@ -11,7 +10,6 @@ import com.leaf.register.api.model.Message;
 import com.leaf.register.api.model.RegisterMeta;
 import com.leaf.register.api.model.SubscribeMeta;
 import com.leaf.remoting.api.*;
-import com.leaf.remoting.api.channel.ChannelGroup;
 import com.leaf.remoting.api.future.ResponseFuture;
 import com.leaf.remoting.api.payload.RequestCommand;
 import com.leaf.remoting.api.payload.ResponseCommand;
@@ -27,12 +25,18 @@ import io.netty.util.internal.SystemPropertyUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.List;
 import java.util.TimerTask;
 import java.util.concurrent.*;
 
 import static com.leaf.remoting.api.ProtocolHead.ACK;
 import static com.leaf.remoting.api.ProtocolHead.SUBSCRIBE_RECEIVE;
 
+/**
+ * 默认的注册中心客户端
+ *
+ * @author yefei
+ */
 public class DefaultRegisterClient {
 
     private static final Logger logger = LoggerFactory.getLogger(DefaultRegisterClient.class);
@@ -52,7 +56,7 @@ public class DefaultRegisterClient {
     private final AbstractRegisterService registerService;
     private final ConcurrentHashMap<Long, ResendMessage> resendMessages = new ConcurrentHashMap<>();
     private final ScheduledExecutorService resendMessageTimer;
-    private volatile Channel channel;
+    private volatile UnresolvedAddress address;
 
     public DefaultRegisterClient(AbstractRegisterService registerService) {
         this.registerService = registerService;
@@ -68,33 +72,33 @@ public class DefaultRegisterClient {
                 return thread;
             }
         });
-        this.resendMessageTimer.scheduleAtFixedRate(new TimerTask() {
-            @Override
-            public void run() {
-                for (ResendMessage resendMessage : resendMessages.values()) {
-                    if (System.currentTimeMillis() - resendMessage.getTimestamp() > 100) {
-                        try {
-                            rpcClient.invokeAsync(
-                                    channel,
-                                    resendMessage.getRequestCommand(),
-                                    config.getInvokeTimeoutMillis(),
-                                    resendMessage.getRegisterInvokeCallback()
-                            );
-                        } catch (Exception e) {
-                            logger.error("resend no ack message error! {}", e.getMessage(), e);
-                        }
-                    }
-                }
-            }
-        }, 1000, Constants.DEFAULT_RESNED_INTERVAL, TimeUnit.MILLISECONDS);
     }
 
     public void connect(UnresolvedAddress unresolvedAddress) {
         try {
-            rpcClient.connect(unresolvedAddress);
+            this.address = unresolvedAddress;
             rpcClient.registerRequestProcess(new RegisterClientProcess(), Executors.newCachedThreadPool());
-            ChannelGroup group = rpcClient.group(unresolvedAddress);
-            this.channel = group.next();
+            rpcClient.connect(unresolvedAddress);
+
+            this.resendMessageTimer.scheduleAtFixedRate(new TimerTask() {
+                @Override
+                public void run() {
+                    for (ResendMessage resendMessage : resendMessages.values()) {
+                        if (System.currentTimeMillis() - resendMessage.getTimestamp() > 100) {
+                            try {
+                                rpcClient.invokeAsync(
+                                        unresolvedAddress,
+                                        resendMessage.getRequestCommand(),
+                                        config.getInvokeTimeoutMillis(),
+                                        resendMessage.getRegisterInvokeCallback()
+                                );
+                            } catch (Exception e) {
+                                logger.error("resend no ack message error! {}", e.getMessage(), e);
+                            }
+                        }
+                    }
+                }
+            }, 1000, Constants.DEFAULT_RESNED_INTERVAL, TimeUnit.MILLISECONDS);
         } catch (Exception e) {
             AnyThrow.throwUnchecked(e);
         }
@@ -103,13 +107,9 @@ public class DefaultRegisterClient {
     private void sendMessageToRegister(RequestCommand requestCommand) {
         RegisterInvokeCallback registerInvokeCallback = new RegisterInvokeCallback();
         try {
-            // 重连之后 由于异步事件，可能导致channel没有及时被赋值成重连后的channel
-            if (!channel.isActive()) {
-                TimeUnit.SECONDS.sleep(1);
-            }
             // 如果 channel 还是 isActive == false , 发送失败异常，会重发消息
             rpcClient.invokeAsync(
-                    channel,
+                    address,
                     requestCommand,
                     config.getInvokeTimeoutMillis(),
                     registerInvokeCallback
@@ -124,7 +124,7 @@ public class DefaultRegisterClient {
     }
 
     public void register(RegisterMeta registerMeta) {
-        if (attachRegisterEvent(registerMeta, channel)) {
+        if (attachRegisterEvent(registerMeta, rpcClient.group(address).next())) {
             Serializer serializer = SerializerFactory.serializer(serializerType);
             RequestCommand requestCommand = RemotingCommandFactory.createRequestCommand(
                     ProtocolHead.REGISTER_SERVICE,
@@ -136,7 +136,7 @@ public class DefaultRegisterClient {
     }
 
     public void unRegister(RegisterMeta registerMeta) {
-        if (attachCancelRegisterEvent(registerMeta, channel)) {
+        if (attachCancelRegisterEvent(registerMeta, rpcClient.group(address).next())) {
             Serializer serializer = SerializerFactory.serializer(serializerType);
             RequestCommand requestCommand = RemotingCommandFactory.createRequestCommand(
                     ProtocolHead.CANCEL_REGISTER_SERVICE,
@@ -148,7 +148,7 @@ public class DefaultRegisterClient {
 
 
     public void subscribe(SubscribeMeta subscribeMeta) {
-        if (attachSubscribeEvent(subscribeMeta, channel)) {
+        if (attachSubscribeEvent(subscribeMeta, rpcClient.group(address).next())) {
             Serializer serializer = SerializerFactory.serializer(serializerType);
             RequestCommand requestCommand = RemotingCommandFactory.createRequestCommand(
                     ProtocolHead.SUBSCRIBE_SERVICE,
@@ -196,15 +196,14 @@ public class DefaultRegisterClient {
 
         @Override
         public void onChannelActive(String remoteAddr, Channel channel) {
-            DefaultRegisterClient.this.channel = channel;
             // 重新连接 重新发布 订阅服务
-            ConcurrentSet<RegisterMeta> providers = registerService.getProviderRegisterMetas();
+            List<RegisterMeta> providers = registerService.getRegisterMetas();
             if (Collections.isNotEmpty(providers)) {
                 for (RegisterMeta registerMeta : providers) {
                     register(registerMeta);
                 }
             }
-            ConcurrentSet<SubscribeMeta> consumers = registerService.getConsumersServiceMetas();
+            List<SubscribeMeta> consumers = registerService.getServiceMetas();
             if (Collections.isEmpty(consumers)) {
                 for (SubscribeMeta subscribeMeta : consumers) {
                     subscribe(subscribeMeta);
@@ -221,9 +220,7 @@ public class DefaultRegisterClient {
             Message messageData = serializer.deserialize(request.getBody(), Message.class);
             switch (request.getMessageCode()) {
                 case ProtocolHead.SUBSCRIBE_SERVICE: {
-                    registerService.notify(messageData.getServiceMeta(),
-                            messageData.getEvent(),
-                            messageData.getRegisterMetas());
+                    registerService.notify(messageData.getEvent(), messageData.getRegisterMetas());
                     break;
                 }
                 case ProtocolHead.OFFLINE_SERVICE: {
@@ -276,9 +273,7 @@ public class DefaultRegisterClient {
                         resendMessages.remove(responseCommand.getInvokeId());
 
                         Message messageData = serializer.deserialize(responseCommand.getBody(), Message.class);
-                        registerService.notify(messageData.getServiceMeta(),
-                                messageData.getEvent(),
-                                messageData.getRegisterMetas());
+                        registerService.notify(messageData.getEvent(), messageData.getRegisterMetas());
                     } else {
                         logger.warn("[SUBSCRIBE] receive register message, but response status: {}",
                                 responseCommand.getMessageCode());
@@ -321,6 +316,4 @@ public class DefaultRegisterClient {
             resendMessageTimer.shutdown();
         }
     }
-
-
 }

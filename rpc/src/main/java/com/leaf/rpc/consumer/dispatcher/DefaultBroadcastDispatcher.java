@@ -2,10 +2,10 @@ package com.leaf.rpc.consumer.dispatcher;
 
 import com.leaf.common.context.RpcContext;
 import com.leaf.remoting.api.ProtocolHead;
+import com.leaf.rpc.consumer.LeafClient;
 import com.leaf.rpc.provider.process.RequestWrapper;
 import com.leaf.remoting.api.channel.ChannelGroup;
 import com.leaf.remoting.api.payload.RequestCommand;
-import com.leaf.rpc.consumer.Consumer;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.future.InvokeFuture;
 import com.leaf.serialization.api.Serializer;
@@ -13,11 +13,12 @@ import com.leaf.serialization.api.SerializerType;
 
 /**
  * 广播调用
+ * @author yefei
  */
 public class DefaultBroadcastDispatcher extends AbstractDispatcher {
 
-    public DefaultBroadcastDispatcher(Consumer consumer, SerializerType serializerType) {
-        super(consumer, serializerType);
+    public DefaultBroadcastDispatcher(LeafClient leafClient, SerializerType serializerType) {
+        super(leafClient, serializerType);
     }
 
     @Override

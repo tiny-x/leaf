@@ -47,11 +47,11 @@ public interface HelloService {
 ````
 ##### 3、客户端配置
 ```` xml
-    <leaf:consumer id="consumer" registerType="DEFAULT">
+    <leaf:leafClient id="leafClient" registerType="DEFAULT">
         <leaf:property registryServer="127.0.0.1:9876"/>
-    </leaf:consumer>
+    </leaf:leafClient>
 
-    <leaf:reference id="helloService" consumer="consumer" interfaceClass="com.leaf.example.spring.HelloService">
+    <leaf:reference id="helloService" leafClient="leafClient" interfaceClass="com.leaf.example.spring.HelloService">
         <!-- default leaf -->
         <leaf:property group="spring-demo"/>
         <!-- default class.getName() -->
@@ -107,7 +107,7 @@ public class ProviderExample {
 public class ConsumerExample {
 
     public static void main(String[] args) {
-        ApplicationContext ctx = new ClassPathXmlApplicationContext("classpath:/spring/spring-consumer.xml");
+        ApplicationContext ctx = new ClassPathXmlApplicationContext("classpath:/spring/spring-leafClient.xml");
         HelloService service = ctx.getBean(HelloService.class);
         try {
             String sayHello = service.sayHello("   biu biu biu");

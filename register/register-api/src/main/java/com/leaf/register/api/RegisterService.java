@@ -1,12 +1,19 @@
 package com.leaf.register.api;
 
 import com.leaf.common.UnresolvedAddress;
+import com.leaf.common.model.ServiceMeta;
 import com.leaf.register.api.model.RegisterMeta;
 import com.leaf.register.api.model.SubscribeMeta;
 
 import java.util.List;
 
 public interface RegisterService {
+
+    /**
+     *
+     * @return
+     */
+    void setNamespace(String namespace);
 
     /**
      * 注册
@@ -23,27 +30,27 @@ public interface RegisterService {
     void unRegister(RegisterMeta RegisterMeta);
 
     /**
-     * 订阅服务（ServiceMeta）
+     * 订阅服务注册者信息
      *
      * @param subscribeMeta
      * @param notifyListener
      */
-    void subscribe(SubscribeMeta subscribeMeta, NotifyListener notifyListener);
+    void subscribeRegisterMeta(SubscribeMeta subscribeMeta, NotifyListener<RegisterMeta> notifyListener);
 
     /**
-     * 订阅所有组信息（group）
+     * 订阅服务订阅者
      *
+     * @param serviceMeta
      * @param notifyListener
      */
-    void subscribeGroup(NotifyListener notifyListener);
+    void subscribeSubscribeMeta(ServiceMeta serviceMeta, NotifyListener<SubscribeMeta> notifyListener);
 
     /**
-     * 查找
+     * 查找所有的服务
      *
-     * @param RegisterMeta
      * @return
      */
-    List<RegisterMeta> lookup(RegisterMeta RegisterMeta);
+    List<ServiceMeta> lookup();
 
     /**
      * 机器所有服务下线通知

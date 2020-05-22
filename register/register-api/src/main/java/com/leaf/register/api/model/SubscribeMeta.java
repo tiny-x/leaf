@@ -11,6 +11,10 @@ public class SubscribeMeta {
     public SubscribeMeta() {
     }
 
+    public SubscribeMeta(ServiceMeta serviceMeta) {
+        this.serviceMeta = serviceMeta;
+    }
+
     public SubscribeMeta(ServiceMeta serviceMeta, String addressHost) {
         this.serviceMeta = serviceMeta;
         this.addressHost = addressHost;

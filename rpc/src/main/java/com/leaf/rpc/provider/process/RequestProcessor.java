@@ -3,15 +3,11 @@ package com.leaf.rpc.provider.process;
 import com.leaf.remoting.api.RequestCommandProcessor;
 import com.leaf.rpc.controller.FlowController;
 
+/**
+ * rpc层请求处理器
+ * @author yefei
+ */
 public interface RequestProcessor {
-
-    /**
-     * rpc层处理
-     *
-     * @param request
-     * @return
-     */
-    ResponseWrapper process(RequestWrapper request);
 
     /**
      * remoting 层处理

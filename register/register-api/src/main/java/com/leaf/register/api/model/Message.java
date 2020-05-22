@@ -39,4 +39,5 @@ public class Message {
     public RegisterMeta[] getRegisterMetas() {
         return registerMetas;
     }
+
 }

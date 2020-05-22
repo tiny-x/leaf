@@ -1,0 +1,11 @@
+logging:
+  config: classpath:logback-spring.xml
+  dir: /tmp/logs/leaf-jobs
+  level:
+    root: info
+    com.leaf: debug
+    org.springframework: info
+
+spring:
+  resources:
+    static-locations: classpath:/static/

@@ -49,7 +49,7 @@ public class GenericReferenceFactoryBean<T> implements FactoryBean<GenericInvoke
         checkNotNull(consumer, "consumer");
 
         GenericProxyFactory factory = GenericProxyFactory.factory();
-        factory.consumer(consumer.getConsumer())
+        factory.consumer(consumer.getLeafClient())
                 .group(group)
                 .version(version)
                 .timeMillis(timeout);

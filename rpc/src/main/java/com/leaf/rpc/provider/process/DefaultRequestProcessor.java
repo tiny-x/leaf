@@ -21,6 +21,9 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.RejectedExecutionException;
 
+/**
+ * @author yefei
+ */
 public class DefaultRequestProcessor implements RequestProcessor {
 
     private final static Logger logger = LoggerFactory.getLogger(DefaultRequestProcessor.class);
@@ -181,9 +184,4 @@ public class DefaultRequestProcessor implements RequestProcessor {
         return requestCommandProcessor;
     }
 
-    @Override
-    public ResponseWrapper process(RequestWrapper request) {
-
-        return null;
-    }
 }

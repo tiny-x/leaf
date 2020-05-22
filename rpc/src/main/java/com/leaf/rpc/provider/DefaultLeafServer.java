@@ -26,6 +26,9 @@ import com.leaf.rpc.provider.process.RequestProcessor;
 
 import java.lang.reflect.Method;
 
+/**
+ * @author yefei
+ */
 public class DefaultLeafServer implements LeafServer {
 
     private final RemotingServer server;
@@ -82,6 +85,11 @@ public class DefaultLeafServer implements LeafServer {
     @Override
     public void start() {
         this.server.start();
+    }
+
+    @Override
+    public String application() {
+        return null;
     }
 
     @Override

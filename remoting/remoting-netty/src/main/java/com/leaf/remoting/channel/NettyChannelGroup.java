@@ -15,6 +15,9 @@ import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * @author yefei
+ */
 public class NettyChannelGroup implements ChannelGroup {
 
     private static final Logger logger = LoggerFactory.getLogger(NettyChannelGroup.class);
@@ -32,15 +35,6 @@ public class NettyChannelGroup implements ChannelGroup {
     public NettyChannelGroup(UnresolvedAddress address) {
         this.address = address;
     }
-
-    // 连接断开时自动被移除
-    private final ChannelFutureListener remover = new ChannelFutureListener() {
-        @Override
-        public void operationComplete(ChannelFuture future) throws Exception {
-            logger.info("channel close , remove channel: {}", future.channel());
-            removeChannel(future.channel());
-        }
-    };
 
     @Override
     public UnresolvedAddress remoteAddress() {
@@ -64,11 +58,16 @@ public class NettyChannelGroup implements ChannelGroup {
 
     @Override
     public boolean addChannel(Channel channel) {
-        boolean added = channels.add(channel);
-        if (added) {
-            channel.closeFuture().addListener(remover);
-        }
-        return added;
+        channels.add(channel);
+        //连接断开时自动被移除
+        channel.closeFuture().addListener(new ChannelFutureListener() {
+            @Override
+            public void operationComplete(ChannelFuture future) throws Exception {
+                logger.info("channel close , remove channel: {}", future.channel());
+                removeChannel(future.channel());
+            }
+        });
+        return true;
     }
 
     @Override

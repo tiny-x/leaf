@@ -5,9 +5,14 @@ import com.leaf.common.model.Directory;
 import com.leaf.common.utils.Collections;
 import com.leaf.remoting.api.channel.ChannelGroup;
 
-import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
+/**
+ * 加权轮训
+ *
+ * @author yefei
+ */
 public class RoundRobinLoadBalancer implements LoadBalancer {
 
     private AtomicInteger integer = new AtomicInteger(0);
@@ -19,7 +24,7 @@ public class RoundRobinLoadBalancer implements LoadBalancer {
     }
     
     @Override
-    public ChannelGroup select(CopyOnWriteArrayList<ChannelGroup> list, Directory directory) {
+    public ChannelGroup select(List<ChannelGroup> list, Directory directory) {
         if (Collections.isEmpty(list)) {
             return null;
         }

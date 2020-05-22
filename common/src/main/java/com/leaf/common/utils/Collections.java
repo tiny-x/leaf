@@ -11,8 +11,18 @@ public class Collections {
         return false;
     }
 
+    public static <E> boolean isEmpty(E... e) {
+        if (e == null || e.length == 0) {
+            return true;
+        }
+        return false;
+    }
+
     public static <E> boolean isNotEmpty(Collection<E> collection) {
         return !isEmpty(collection);
     }
 
+    public static <E> boolean isNotEmpty(E... e) {
+        return !isEmpty(e);
+    }
 }

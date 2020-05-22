@@ -1,6 +1,6 @@
 package com.leaf.register;
 
-import com.leaf.register.process.RegisterProcess;
+import com.leaf.register.process.RegisterRequestCommandProcess;
 import com.leaf.remoting.api.RemotingServer;
 import com.leaf.remoting.netty.NettyServer;
 import com.leaf.remoting.netty.NettyServerConfig;
@@ -15,7 +15,7 @@ public class DefaultRegisterServer implements RegisterServer {
 
     private final NettyServerConfig nettyServerConfig;
 
-    private final RegisterProcess requestProcessor;
+    private final RegisterRequestCommandProcess requestProcessor;
 
     public DefaultRegisterServer() {
         this(new NettyServerConfig());
@@ -24,7 +24,7 @@ public class DefaultRegisterServer implements RegisterServer {
     public DefaultRegisterServer(NettyServerConfig config) {
         config.setPort(DEFAULT_PORT);
         this.nettyServerConfig = config;
-        this.requestProcessor  = new RegisterProcess(this);
+        this.requestProcessor  = new RegisterRequestCommandProcess(this);
         this.rpcServer = new NettyServer(config, requestProcessor.new RegisterChannelEventProcess());
         this.rpcServer.registerRequestProcess(requestProcessor, Executors.newCachedThreadPool());
     }

@@ -3,8 +3,8 @@ package com.leaf.example.cluster.failfast;
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.example.cluster.api.ClusterService;
 import com.leaf.rpc.DefaultProxyFactory;
-import com.leaf.rpc.consumer.Consumer;
-import com.leaf.rpc.consumer.DefaultConsumer;
+import com.leaf.rpc.consumer.LeafClient;
+import com.leaf.rpc.consumer.DefaultLeafClient;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.cluster.ClusterInvoker;
 import com.leaf.rpc.consumer.future.InvokeFuture;
@@ -16,7 +16,7 @@ import java.util.HashMap;
 public class FailFastConsumer {
 
     public static void main(String[] args) {
-        Consumer consumer = new DefaultConsumer("consumer");
+        LeafClient leafClient = new DefaultLeafClient("consumer");
         UnresolvedAddress[] addresses = new UnresolvedAddress[] {
                 new UnresolvedAddress("127.0.0.1", 9180),
                 new UnresolvedAddress("127.0.0.1", 9180),
@@ -26,18 +26,18 @@ public class FailFastConsumer {
                 new UnresolvedAddress("127.0.0.1", 9182),
         };
         for (UnresolvedAddress address : addresses) {
-            consumer.connect(address);
-            consumer.connect(address);
+            leafClient.connect(address);
+            leafClient.connect(address);
         }
         System.out.println("------------------同步调用");
-        sync(consumer, addresses);
+        sync(leafClient, addresses);
         System.out.println("------------------异步调用");
-        async(consumer, addresses);
+        async(leafClient, addresses);
     }
 
-    private static void sync(Consumer consumer, UnresolvedAddress[] addresses) {
+    private static void sync(LeafClient leafClient, UnresolvedAddress[] addresses) {
         ClusterService clusterService = DefaultProxyFactory.factory(ClusterService.class)
-                .consumer(consumer)
+                .consumer(leafClient)
                 .providers(addresses)
                 .strategy(ClusterInvoker.Strategy.FAIL_FAST)
                 .newProxy();
@@ -68,9 +68,9 @@ public class FailFastConsumer {
         }
     }
 
-    private static void async(Consumer consumer, UnresolvedAddress[] addresses) {
+    private static void async(LeafClient leafClient, UnresolvedAddress[] addresses) {
         ClusterService clusterService = DefaultProxyFactory.factory(ClusterService.class)
-                .consumer(consumer)
+                .consumer(leafClient)
                 .providers(addresses)
                 .invokeType(InvokeType.ASYNC)
                 .strategy(ClusterInvoker.Strategy.FAIL_FAST)

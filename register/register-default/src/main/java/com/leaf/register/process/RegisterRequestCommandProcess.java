@@ -34,9 +34,13 @@ import java.util.concurrent.*;
 
 import static com.leaf.remoting.api.ProtocolHead.*;
 
-public class RegisterProcess implements RequestCommandProcessor {
+/**
+ * 注册中心 RequestCommandProcess
+ * @author yefei
+ */
+public class RegisterRequestCommandProcess implements RequestCommandProcessor {
 
-    private static final Logger logger = LoggerFactory.getLogger(RegisterProcess.class);
+    private static final Logger logger = LoggerFactory.getLogger(RegisterRequestCommandProcess.class);
     private static final SerializerType serializerType;
 
     static {
@@ -56,7 +60,7 @@ public class RegisterProcess implements RequestCommandProcessor {
 
     private final ScheduledExecutorService resendMessageTimer;
 
-    public RegisterProcess(DefaultRegisterServer defaultRegisterServer) {
+    public RegisterRequestCommandProcess(DefaultRegisterServer defaultRegisterServer) {
         this.defaultRegisterServer = defaultRegisterServer;
 
         this.resendMessageTimer = new ScheduledThreadPoolExecutor(1, new ThreadFactory() {
@@ -123,8 +127,6 @@ public class RegisterProcess implements RequestCommandProcessor {
         logger.info("[SUBSCRIBE] subscribe service: {}", serviceName);
 
         ConcurrentSet<RegisterMeta> registerMetas = PROVIDER_MAP.get(serviceName);
-        List<RegisterMeta> registerMetasList = new ArrayList<>(registerMetas);
-
         // 返回给客户端已经注册的服务
         ResponseCommand responseCommand = RemotingCommandFactory.createResponseCommand(
                 ProtocolHead.ACK,

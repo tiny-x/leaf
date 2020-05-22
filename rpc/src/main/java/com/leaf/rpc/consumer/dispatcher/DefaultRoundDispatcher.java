@@ -6,17 +6,20 @@ import com.leaf.rpc.provider.process.RequestWrapper;
 import com.leaf.remoting.api.channel.ChannelGroup;
 import com.leaf.remoting.api.payload.RequestCommand;
 import com.leaf.rpc.balancer.LoadBalancer;
-import com.leaf.rpc.consumer.Consumer;
+import com.leaf.rpc.consumer.LeafClient;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.future.InvokeFuture;
 import com.leaf.serialization.api.Serializer;
 import com.leaf.serialization.api.SerializerType;
 
+/**
+ * @author yefei
+ */
 public class DefaultRoundDispatcher extends AbstractDispatcher {
 
     public DefaultRoundDispatcher(
-            Consumer consumer, LoadBalancer loadBalancer, SerializerType serializerType) {
-        super(consumer, loadBalancer, serializerType);
+            LeafClient leafClient, LoadBalancer loadBalancer, SerializerType serializerType) {
+        super(leafClient, loadBalancer, serializerType);
     }
 
     @Override

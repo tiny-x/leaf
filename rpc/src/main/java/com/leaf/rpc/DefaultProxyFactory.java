@@ -50,19 +50,19 @@ public class DefaultProxyFactory extends AbstractProxyFactory {
                 Strings.isNullOrEmpty(version) ? Constants.DEFAULT_SERVICE_VERSION : version);
 
         for (UnresolvedAddress address : addresses) {
-            consumer.client().addChannelGroup(serviceMeta, address);
+            leafClient.client().addChannelGroup(serviceMeta, address);
         }
 
-        if (consumer.registerService() != null) {
+        if (leafClient.registerService() != null) {
             subscribe(serviceMeta);
         }
 
-        Dispatcher dispatcher = dispatcher(dispatchType, consumer, loadBalancerType, timeoutMillis);
+        Dispatcher dispatcher = dispatcher(dispatchType, leafClient, loadBalancerType, timeoutMillis);
 
         return (T) Proxies.getDefault().newProxy(
                 interfaceClass,
                 new DefaultInvoker(
-                        consumer.application(),
+                        leafClient.application(),
                         dispatcher,
                         serviceMeta,
                         new StrategyConfig(strategy, retries),

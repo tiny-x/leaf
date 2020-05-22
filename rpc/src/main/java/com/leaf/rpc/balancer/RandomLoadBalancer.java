@@ -4,12 +4,13 @@ import com.leaf.common.model.Directory;
 import com.leaf.common.utils.Collections;
 import com.leaf.remoting.api.channel.ChannelGroup;
 
+import java.util.List;
 import java.util.Random;
-import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * 加权随机
+ * @author yefei
  */
 public class RandomLoadBalancer implements LoadBalancer {
 
@@ -24,7 +25,7 @@ public class RandomLoadBalancer implements LoadBalancer {
     }
 
     @Override
-    public ChannelGroup select(CopyOnWriteArrayList<ChannelGroup> list, Directory directory) {
+    public ChannelGroup select(List<ChannelGroup> list, Directory directory) {
         if (Collections.isEmpty(list)) {
             return null;
         }

@@ -1,12 +1,15 @@
 package com.leaf.rpc.provider;
 
 import com.leaf.common.model.Directory;
-import com.leaf.remoting.api.RequestCommandProcessor;
-import com.leaf.rpc.local.ServiceWrapper;
 import com.leaf.rpc.controller.FlowController;
 import com.leaf.rpc.local.ServiceRegistry;
+import com.leaf.rpc.local.ServiceWrapper;
 import com.leaf.rpc.provider.process.RequestProcessFilter;
 
+/**
+ * rpc 服务端
+ * @author yefei
+ */
 public interface LeafServer {
 
     /**
@@ -21,6 +24,12 @@ public interface LeafServer {
      * @return
      */
     ServiceWrapper lookupService(Directory directory);
+
+    /**
+     *
+     * @return
+     */
+    String application();
 
     /**
      * 本地注册（本地内存缓存服务实现类）

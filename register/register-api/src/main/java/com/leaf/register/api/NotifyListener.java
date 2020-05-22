@@ -1,9 +1,6 @@
 package com.leaf.register.api;
 
+public interface NotifyListener<T> {
 
-import com.leaf.register.api.model.RegisterMeta;
-
-public interface NotifyListener {
-
-    void notify(RegisterMeta registerMeta, NotifyEvent event);
+    void notify(T t, NotifyEvent event);
 }

@@ -104,7 +104,7 @@
                     <xsd:element name="property" type="referencePropertyType"/>
                 </xsd:choice>
 
-                <xsd:attribute name="consumer" type="xsd:string" use="required">
+                <xsd:attribute name="leafClient" type="xsd:string" use="required">
                     <xsd:annotation>
                         <xsd:documentation><![CDATA[ The reference client. ]]></xsd:documentation>
                     </xsd:annotation>
@@ -211,7 +211,7 @@
 
 
     <xsd:element name="leafServer" type="providerType"/>
-    <xsd:element name="consumer" type="consumerType"/>
+    <xsd:element name="leafClient" type="consumerType"/>
     <xsd:element name="reference" type="referenceType"/>
     <xsd:element name="service" type="serviceType"/>
 

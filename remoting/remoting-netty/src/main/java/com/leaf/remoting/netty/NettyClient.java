@@ -1,5 +1,6 @@
 package com.leaf.remoting.netty;
 
+import com.google.common.collect.Lists;
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.model.Directory;
 import com.leaf.common.utils.Collections;
@@ -28,6 +29,8 @@ import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -144,18 +147,13 @@ public class NettyClient extends NettyServiceAbstract implements RemotingClient 
     }
 
     @Override
-    public boolean hasAvailableChannelGroup(UnresolvedAddress address) {
-        return group(address).isAvailable();
-    }
-
-    @Override
     public boolean addChannelGroup(Directory directory, UnresolvedAddress address) {
         ChannelGroup group = group(address);
         CopyOnWriteArrayList groups = directoryChannelGroup.find(directory);
         boolean added = groups.addIfAbsent(group);
         if (added) {
             if (logger.isInfoEnabled()) {
-                logger.info("Added channel group: {} to {}.", group, directory.directory());
+                logger.info("Added channel to {}. group {}", directory.directory(), group);
             }
         }
         return added;
@@ -175,32 +173,12 @@ public class NettyClient extends NettyServiceAbstract implements RemotingClient 
     }
 
     @Override
-    public CopyOnWriteArrayList<ChannelGroup> directory(Directory directory) {
-        return directoryChannelGroup.find(directory);
+    public List<ChannelGroup> directory(Directory directory) {
+        List<ChannelGroup> channelGroups = Lists.newArrayList();
+        channelGroups.addAll(directoryChannelGroup.find(directory));
+        return channelGroups;
     }
 
-    @Override
-    public boolean isDirectoryAvailable(Directory directory) {
-        CopyOnWriteArrayList<ChannelGroup> groups = directory(directory);
-        for (ChannelGroup g : groups) {
-            if (g.isAvailable()) {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    @Override
-    public ResponseCommand invokeSync(Channel channel, RequestCommand request, long timeoutMillis)
-            throws RemotingException, InterruptedException {
-        return invokeSync0(channel, request, timeoutMillis, TimeUnit.MILLISECONDS);
-    }
-
-    @Override
-    public void invokeAsync(Channel channel, RequestCommand request, long timeoutMillis, InvokeCallback<ResponseCommand> invokeCallback)
-            throws RemotingException, InterruptedException {
-        invokeAsync0(channel, request, timeoutMillis, TimeUnit.MILLISECONDS, invokeCallback);
-    }
 
     @Override
     public ResponseCommand invokeSync(final UnresolvedAddress address, RequestCommand request, long timeoutMillis)
@@ -213,12 +191,6 @@ public class NettyClient extends NettyServiceAbstract implements RemotingClient 
                             long timeoutMillis, InvokeCallback<ResponseCommand> invokeCallback)
             throws RemotingException, InterruptedException {
         invokeAsync0(group(address).next(), request, timeoutMillis, TimeUnit.MILLISECONDS, invokeCallback);
-    }
-
-    @Override
-    public void invokeOneWay(Channel channel, RequestCommand request, long timeoutMillis)
-            throws RemotingException, InterruptedException {
-        invokeOneWay0(channel, request, timeoutMillis, TimeUnit.MILLISECONDS);
     }
 
     @Override

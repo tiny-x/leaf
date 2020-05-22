@@ -1,17 +1,17 @@
 package com.leaf.example.register;
 
 import com.leaf.rpc.DefaultProxyFactory;
-import com.leaf.rpc.consumer.Consumer;
-import com.leaf.rpc.consumer.DefaultConsumer;
+import com.leaf.rpc.consumer.DefaultLeafClient;
+import com.leaf.rpc.consumer.LeafClient;
 
 public class ConsumerExample {
 
     public static void main(String[] args) {
-        Consumer consumer = new DefaultConsumer("consumer");
-        consumer.connectToRegistryServer("127.0.0.1:9876");
+        LeafClient leafClient = new DefaultLeafClient("consumer");
+        leafClient.connectToRegistryServer("127.0.0.1:9876");
 
         HelloService helloService = DefaultProxyFactory.factory(HelloService.class)
-                .consumer(consumer)
+                .consumer(leafClient)
                 .timeMillis(3000L)
                 .newProxy();
 

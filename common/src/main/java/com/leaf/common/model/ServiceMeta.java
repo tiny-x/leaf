@@ -13,6 +13,9 @@ public class ServiceMeta extends Directory {
 
     private String version;
 
+    public ServiceMeta() {
+    }
+
     public ServiceMeta(String serviceProviderName) {
         this(Constants.DEFAULT_SERVICE_GROUP, serviceProviderName);
     }

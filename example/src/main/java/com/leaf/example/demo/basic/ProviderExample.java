@@ -1,19 +1,16 @@
 package com.leaf.example.demo.basic;
 
-import com.leaf.rpc.local.ServiceWrapper;
 import com.leaf.example.demo.HelloService;
 import com.leaf.example.demo.HelloServiceImpl;
-import com.leaf.remoting.netty.NettyServerConfig;
 import com.leaf.rpc.controller.RateLimitFlowController;
+import com.leaf.rpc.local.ServiceWrapper;
 import com.leaf.rpc.provider.DefaultLeafServer;
 import com.leaf.rpc.provider.LeafServer;
 
 public class ProviderExample {
 
     public static void main(String[] args) {
-        NettyServerConfig config = new NettyServerConfig();
-        config.setPort(9180);
-        LeafServer leafServer = new DefaultLeafServer(config);
+        LeafServer leafServer = new DefaultLeafServer(9180);
         leafServer.start();
         leafServer.registerGlobalFlowController(new RateLimitFlowController(100000));
         HelloService helloService = new HelloServiceImpl();

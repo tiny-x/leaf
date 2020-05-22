@@ -1,5 +1,6 @@
 package com.leaf.register.api;
 
+import com.google.common.collect.Lists;
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.concurrent.ConcurrentSet;
 import com.leaf.common.model.ServiceMeta;
@@ -14,45 +15,39 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 
-public abstract class AbstractRegisterService extends AbstractRetryRegisterService {
+public abstract class AbstractRegisterService implements RegisterService {
 
     private final static Logger logger = LoggerFactory.getLogger(AbstractRegisterService.class);
 
     /**
-     * 订阅者监听器
+     * 订阅provider监听器
      */
-    private final ConcurrentMap<ServiceMeta, NotifyListener> subscribeListeners = new ConcurrentHashMap<>();
+    private final ConcurrentMap<ServiceMeta, CopyOnWriteArrayList<NotifyListener<RegisterMeta>>> subscribeProviderListeners = new ConcurrentHashMap<>();
 
     /**
-     * 服务组的监听（获取所有组）
+     * 订阅consumer监听器
      */
-    private volatile NotifyListener subscribeGroupListeners;
-
-    /**
-     * 服务名称的监听（获取所有版本）
-     */
-    private final ConcurrentMap<ServiceMeta, NotifyListener> subscribeServiceNameListeners = new ConcurrentHashMap<>();
+    private final ConcurrentMap<ServiceMeta, CopyOnWriteArrayList<NotifyListener<SubscribeMeta>>> subscribeSubscriberListeners = new ConcurrentHashMap<>();
 
     /**
      * 服务下线通知监听
      */
-    private final ConcurrentMap<UnresolvedAddress, CopyOnWriteArrayList<OfflineListener>> offlineListeners =
-            new ConcurrentHashMap<>();
+    private final ConcurrentMap<UnresolvedAddress, CopyOnWriteArrayList<OfflineListener>> offlineListeners = new ConcurrentHashMap<>();
 
     /**
-     * 正在注册的服务
+     * 注册者
      */
-    protected final ConcurrentSet<RegisterMeta> preProviderRegisterMetas = new ConcurrentSet<>();
+    protected final ConcurrentSet<RegisterMeta> registers = new ConcurrentSet<>();
 
     /**
-     * 已经注册的服务(断线重连是重连注册服务)
+     * 订阅provider的客户端
      */
-    protected final ConcurrentSet<RegisterMeta> providerRegisterMetas = new ConcurrentSet<>();
+    protected final ConcurrentSet<SubscribeMeta> subscribes = new ConcurrentSet<>();
 
     /**
-     * 已经订阅的服务
+     * 订阅consumer的客户端（控制台等需要）
      */
-    protected final ConcurrentSet<SubscribeMeta> consumersServiceMetas = new ConcurrentSet<>();
+    protected final ConcurrentSet<ServiceMeta> subscribeConsumers = new ConcurrentSet<>();
 
     public AbstractRegisterService() {
     }
@@ -60,7 +55,6 @@ public abstract class AbstractRegisterService extends AbstractRetryRegisterServi
     @Override
     public void register(RegisterMeta registerMeta) {
         logger.info("[REGISTER] register service: {}", registerMeta);
-        preProviderRegisterMetas.add(registerMeta);
         doRegister(registerMeta);
     }
 
@@ -68,22 +62,42 @@ public abstract class AbstractRegisterService extends AbstractRetryRegisterServi
     public void unRegister(RegisterMeta registerMeta) {
         logger.info("[UN_REGISTER] unRegister service: {}", registerMeta);
         doUnRegister(registerMeta);
-        providerRegisterMetas.remove(registerMeta);
+        registers.remove(registerMeta);
     }
 
     @Override
-    public void subscribe(SubscribeMeta subscribeMeta, NotifyListener notifyListener) {
-        logger.info("[SUBSCRIBE] subscribe service: {}", subscribeMeta);
-        subscribeListeners.put(subscribeMeta.getServiceMeta(), notifyListener);
-        consumersServiceMetas.add(subscribeMeta);
-        doSubscribe(subscribeMeta);
+    public void subscribeRegisterMeta(SubscribeMeta subscribeMeta, NotifyListener<RegisterMeta> notifyListener) {
+        logger.info("[SUBSCRIBE] subscribe register meta: {}", subscribeMeta);
+        subscribes.add(subscribeMeta);
+
+        ServiceMeta serviceMeta = subscribeMeta.getServiceMeta();
+        CopyOnWriteArrayList<NotifyListener<RegisterMeta>> notifyListeners = subscribeProviderListeners.get(serviceMeta);
+        if (notifyListeners == null) {
+            CopyOnWriteArrayList<NotifyListener<RegisterMeta>> newNotifyListeners = new CopyOnWriteArrayList();
+            notifyListeners = subscribeProviderListeners.putIfAbsent(serviceMeta, newNotifyListeners);
+            if (notifyListeners == null) {
+                notifyListeners = newNotifyListeners;
+            }
+        }
+        notifyListeners.add(notifyListener);
+        doSubscribeRegisterMeta(subscribeMeta);
     }
 
     @Override
-    public void subscribeGroup(NotifyListener notifyListener) {
-        logger.info("[SUBSCRIBE_GROUP] subscribe all group");
-        this.subscribeGroupListeners = notifyListener;
-        doSubscribeGroup();
+    public void subscribeSubscribeMeta(ServiceMeta serviceMeta, NotifyListener<SubscribeMeta> notifyListener) {
+        logger.info("[SUBSCRIBE] subscribe subscriber meta: {}", serviceMeta);
+        subscribeConsumers.add(serviceMeta);
+
+        CopyOnWriteArrayList<NotifyListener<SubscribeMeta>> notifyListeners = subscribeSubscriberListeners.get(serviceMeta);
+        if (notifyListeners == null) {
+            CopyOnWriteArrayList<NotifyListener<SubscribeMeta>> newNotifyListeners = new CopyOnWriteArrayList<>();
+            notifyListeners = subscribeSubscriberListeners.putIfAbsent(serviceMeta, newNotifyListeners);
+            if (notifyListeners == null) {
+                notifyListeners = newNotifyListeners;
+            }
+        }
+        notifyListeners.add(notifyListener);
+        doSubscribeSubscribeMeta(serviceMeta);
     }
 
     @Override
@@ -110,51 +124,47 @@ public abstract class AbstractRegisterService extends AbstractRetryRegisterServi
         }
     }
 
-    public void notify(ServiceMeta serviceMeta, NotifyEvent event, RegisterMeta... registerMetas) {
-        logger.info("[NOTIFY] consumer registerMetas: {}, notifyEvent：{}", registerMetas, event.name());
+    public void notify(NotifyEvent event, RegisterMeta... registerMetas) {
+        logger.info("[NOTIFY] client registerMeta: {}, notifyEvent：{}", registerMetas, event.name());
+        if (Collections.isNotEmpty(registerMetas)) {
+            for (RegisterMeta meta : registerMetas) {
+                CopyOnWriteArrayList<NotifyListener<RegisterMeta>> notifyListeners = subscribeProviderListeners.get(meta.getServiceMeta());
+                for (NotifyListener<RegisterMeta> notifyListener : notifyListeners) {
+                    notifyListener.notify(meta, event);
+                }
+            }
+        }
 
-        if (registerMetas != null && registerMetas.length > 0) {
-            NotifyListener notifyListener = subscribeListeners.get(serviceMeta);
-            for (RegisterMeta registerMeta : registerMetas) {
-                notifyListener.notify(registerMeta, event);
+    }
+
+    public void notify(NotifyEvent event, SubscribeMeta... subscribeMetas) {
+        logger.info("[NOTIFY] client subscribeMeta: {}, notifyEvent：{}", subscribeMetas, event.name());
+        if (Collections.isNotEmpty(subscribeMetas)) {
+            for (SubscribeMeta meta : subscribeMetas) {
+                CopyOnWriteArrayList<NotifyListener<SubscribeMeta>> notifyListeners = subscribeSubscriberListeners.get(meta.getServiceMeta());
+                for (NotifyListener<SubscribeMeta> notifyListener : notifyListeners) {
+                    notifyListener.notify(meta, event);
+                }
             }
         }
     }
 
-    public void notifyGroup(NotifyEvent event, RegisterMeta... registerMetas) {
-        logger.info("[NOTIFY] all group notifyEvent：{}, registerMetas: {}", registerMetas, event.name());
-
-        if (registerMetas != null && registerMetas.length > 0 && subscribeGroupListeners != null) {
-            for (RegisterMeta registerMeta : registerMetas) {
-                subscribeGroupListeners.notify(registerMeta, event);
-            }
-        }
+    public List<RegisterMeta> getRegisterMetas() {
+        List<RegisterMeta> registerMetas = Lists.newArrayList(registers);
+        return registerMetas;
     }
 
-    public void notifyService(ServiceMeta serviceMeta, NotifyEvent event, RegisterMeta... registerMetas) {
-        logger.info("[NOTIFY] all service name: {} notifyEvent：{}, registerMetas: {}",
-                serviceMeta,
-                event.name(),
-                registerMetas);
-
-        if (registerMetas != null && registerMetas.length > 0) {
-            NotifyListener notifyListener = subscribeServiceNameListeners.get(serviceMeta);
-            for (RegisterMeta registerMeta : registerMetas) {
-                notifyListener.notify(registerMeta, event);
-            }
-        }
+    public List<SubscribeMeta> getServiceMetas() {
+        List<SubscribeMeta> subscribeMetas = Lists.newArrayList(subscribes);
+        return subscribeMetas;
     }
 
-    @Override
-    public List<RegisterMeta> lookup(RegisterMeta RegisterMeta) {
-        return null;
-    }
+    protected abstract void doRegister(RegisterMeta registerMeta);
 
-    public ConcurrentSet<RegisterMeta> getProviderRegisterMetas() {
-        return providerRegisterMetas;
-    }
+    protected abstract void doUnRegister(RegisterMeta registerMeta);
 
-    public ConcurrentSet<SubscribeMeta> getConsumersServiceMetas() {
-        return consumersServiceMetas;
-    }
+    protected abstract void doSubscribeRegisterMeta(SubscribeMeta serviceMeta);
+
+    protected abstract void doSubscribeSubscribeMeta(ServiceMeta serviceMeta);
+
 }

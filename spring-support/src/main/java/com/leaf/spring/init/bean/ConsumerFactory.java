@@ -1,8 +1,8 @@
 package com.leaf.spring.init.bean;
 
 import com.leaf.register.api.RegisterType;
-import com.leaf.rpc.consumer.Consumer;
-import com.leaf.rpc.consumer.DefaultConsumer;
+import com.leaf.rpc.consumer.LeafClient;
+import com.leaf.rpc.consumer.DefaultLeafClient;
 import org.springframework.beans.factory.InitializingBean;
 
 public class ConsumerFactory implements InitializingBean {
@@ -13,12 +13,12 @@ public class ConsumerFactory implements InitializingBean {
 
     private String registryServer;
 
-    private Consumer consumer;
+    private LeafClient leafClient;
 
     @Override
     public void afterPropertiesSet() throws Exception {
-        consumer = new DefaultConsumer(id, registerType);
-        consumer.connectToRegistryServer(registryServer);
+        leafClient = new DefaultLeafClient(id, registerType);
+        leafClient.connectToRegistryServer(registryServer);
     }
 
     public void setId(String id) {
@@ -29,8 +29,8 @@ public class ConsumerFactory implements InitializingBean {
         this.registryServer = registryServer;
     }
 
-    public Consumer getConsumer() {
-        return consumer;
+    public LeafClient getLeafClient() {
+        return leafClient;
     }
 
     public void setRegisterType(String registerType) {

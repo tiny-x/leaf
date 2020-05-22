@@ -48,7 +48,7 @@ public class ReferenceFactoryBean<T> implements FactoryBean<T>, InitializingBean
         checkNotNull(consumer, "consumer");
 
         DefaultProxyFactory factory = DefaultProxyFactory.factory(interfaceClass);
-        factory.consumer(consumer.getConsumer())
+        factory.consumer(consumer.getLeafClient())
                 .group(group)
                 .version(version)
                 .timeMillis(timeout);

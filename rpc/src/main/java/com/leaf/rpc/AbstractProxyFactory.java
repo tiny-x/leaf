@@ -11,7 +11,7 @@ import com.leaf.register.api.model.RegisterMeta;
 import com.leaf.remoting.api.channel.ChannelGroup;
 import com.leaf.rpc.balancer.LoadBalancerFactory;
 import com.leaf.rpc.balancer.LoadBalancerType;
-import com.leaf.rpc.consumer.Consumer;
+import com.leaf.rpc.consumer.LeafClient;
 import com.leaf.rpc.consumer.InvokeType;
 import com.leaf.rpc.consumer.cluster.ClusterInvoker;
 import com.leaf.rpc.consumer.dispatcher.DefaultBroadcastDispatcher;
@@ -27,7 +27,7 @@ import java.util.Collections;
 import java.util.List;
 
 /**
- *
+ * @author yefei
  */
 public abstract class AbstractProxyFactory {
 
@@ -50,7 +50,7 @@ public abstract class AbstractProxyFactory {
 
     protected List<UnresolvedAddress> addresses;
 
-    protected Consumer consumer;
+    protected LeafClient leafClient;
 
     protected long timeoutMillis;
 
@@ -86,8 +86,8 @@ public abstract class AbstractProxyFactory {
         return this;
     }
 
-    public AbstractProxyFactory consumer(Consumer consumer) {
-        this.consumer = consumer;
+    public AbstractProxyFactory consumer(LeafClient leafClient) {
+        this.leafClient = leafClient;
         return this;
     }
 
@@ -132,37 +132,37 @@ public abstract class AbstractProxyFactory {
     }
 
     protected void subscribe(ServiceMeta serviceMeta) {
-        consumer.subscribe(serviceMeta, new NotifyListener() {
+        leafClient.subscribe(serviceMeta, new NotifyListener<RegisterMeta>() {
             @Override
             public void notify(RegisterMeta registerMeta, NotifyEvent event) {
-                ChannelGroup group = consumer.client().group(registerMeta.getAddress());
+                ChannelGroup group = leafClient.client().group(registerMeta.getAddress());
                 switch (event) {
                     case ADD: {
-                        if (!consumer.client().hasAvailableChannelGroup(registerMeta.getAddress())) {
+                        if (!leafClient.client().group(registerMeta.getAddress()).isAvailable()) {
                             int connCount = registerMeta.getConnCount() < 1 ? 1 : registerMeta.getConnCount();
                             for (int i = 0; i < connCount; i++) {
-                                consumer.connect(registerMeta.getAddress());
+                                leafClient.connect(registerMeta.getAddress());
                             }
-                            consumer.offlineListening(registerMeta.getAddress(), new OfflineListener() {
+                            leafClient.offlineListening(registerMeta.getAddress(), new OfflineListener() {
                                 @Override
                                 public void offline() {
-                                    consumer.client().cancelReconnect(registerMeta.getAddress());
+                                    leafClient.client().cancelReconnect(registerMeta.getAddress());
                                     if (!group.isAvailable()) {
-                                        consumer.client().removeChannelGroup(serviceMeta, registerMeta.getAddress());
+                                        leafClient.client().removeChannelGroup(serviceMeta, registerMeta.getAddress());
                                     }
                                 }
                             });
                         }
                         // channelGroup 和 serviceMeta 关系
-                        consumer.client().addChannelGroup(serviceMeta, registerMeta.getAddress());
+                        leafClient.client().addChannelGroup(serviceMeta, registerMeta.getAddress());
                         // 设置channelGroup(相同地址的channel) weight
-                        consumer.client()
+                        leafClient.client()
                                 .group(registerMeta.getAddress())
                                 .setWeight(serviceMeta, registerMeta.getWeight());
                         break;
                     }
                     case REMOVE: {
-                        consumer.client().removeChannelGroup(serviceMeta, registerMeta.getAddress());
+                        leafClient.client().removeChannelGroup(serviceMeta, registerMeta.getAddress());
                         group.removeWeight(serviceMeta);
                         break;
                     }
@@ -172,16 +172,16 @@ public abstract class AbstractProxyFactory {
         });
     }
 
-   public abstract <T> T newProxy();
+    public abstract <T> T newProxy();
 
-    protected Dispatcher dispatcher(DispatchType dispatchType, Consumer consumer, LoadBalancerType loadBalancerType, long timeoutMillis) {
+    protected Dispatcher dispatcher(DispatchType dispatchType, LeafClient leafClient, LoadBalancerType loadBalancerType, long timeoutMillis) {
         Dispatcher dispatcher;
         switch (dispatchType) {
             case ROUND:
-                dispatcher = new DefaultRoundDispatcher(consumer, LoadBalancerFactory.instance(loadBalancerType), serializerType);
+                dispatcher = new DefaultRoundDispatcher(leafClient, LoadBalancerFactory.instance(loadBalancerType), serializerType);
                 break;
             case BROADCAST:
-                dispatcher = new DefaultBroadcastDispatcher(consumer, serializerType);
+                dispatcher = new DefaultBroadcastDispatcher(leafClient, serializerType);
                 break;
             default:
                 throw new UnsupportedOperationException("dispatchType: " + dispatchType);

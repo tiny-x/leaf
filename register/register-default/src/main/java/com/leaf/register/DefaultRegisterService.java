@@ -1,6 +1,7 @@
 package com.leaf.register;
 
 import com.leaf.common.UnresolvedAddress;
+import com.leaf.common.model.ServiceMeta;
 import com.leaf.common.utils.InetUtils;
 import com.leaf.register.api.AbstractRegisterService;
 import com.leaf.register.api.RegisterService;
@@ -8,6 +9,7 @@ import com.leaf.register.api.RegisterType;
 import com.leaf.register.api.model.RegisterMeta;
 import com.leaf.register.api.model.SubscribeMeta;
 
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
@@ -21,7 +23,23 @@ public class DefaultRegisterService extends AbstractRegisterService implements R
 
     private ConcurrentMap<UnresolvedAddress, DefaultRegisterClient> registerClients = new ConcurrentHashMap<>();
 
+    private String namespace;
+
     public DefaultRegisterService() {
+    }
+
+    @Override
+    public List<ServiceMeta> lookup() {
+        return null;
+    }
+
+    @Override
+    protected void doSubscribeSubscribeMeta(ServiceMeta serviceMeta) {
+        // TODO
+    }
+
+    @Override
+    public void setNamespace(String namespace) {
     }
 
     @Override
@@ -50,7 +68,7 @@ public class DefaultRegisterService extends AbstractRegisterService implements R
         for (Map.Entry<UnresolvedAddress, DefaultRegisterClient> register : registerClients.entrySet()) {
             register.getValue().register(registerMeta);
         }
-        providerRegisterMetas.add(registerMeta);
+        registers.add(registerMeta);
     }
 
     @Override
@@ -63,17 +81,12 @@ public class DefaultRegisterService extends AbstractRegisterService implements R
     }
 
     @Override
-    public void doSubscribe(SubscribeMeta subscribeMeta) {
+    public void doSubscribeRegisterMeta(SubscribeMeta subscribeMeta) {
         checkArgument(!registerClients.isEmpty(), "not connect any registry server");
 
         for (Map.Entry<UnresolvedAddress, DefaultRegisterClient> register : registerClients.entrySet()) {
             register.getValue().subscribe(subscribeMeta);
         }
-    }
-
-    @Override
-    protected void doSubscribeGroup() {
-
     }
 
     @Override

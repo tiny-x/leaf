@@ -84,18 +84,18 @@ public class NettyServer extends NettyServiceAbstract implements RemotingServer 
     }
 
     @Override
-    public void invokeSync(final Channel channel, final RequestCommand request, long timeoutMillis) throws RemotingException, InterruptedException {
-        invokeSync0(channel, request, timeoutMillis, TimeUnit.MILLISECONDS);
+    public ResponseCommand invokeSync(Channel channel, RequestCommand request, long timeoutMillis) throws RemotingException, InterruptedException {
+        return invokeSync0(channel, request, timeoutMillis, TimeUnit.MILLISECONDS);
+    }
+
+    @Override
+    public void invokeOneWay(Channel channel, RequestCommand request, long timeoutMillis) throws RemotingException, InterruptedException {
+        invokeOneWay0(channel, request, timeoutMillis, TimeUnit.MILLISECONDS);
     }
 
     @Override
     public void invokeAsync(final Channel channel, final RequestCommand request, long timeoutMillis, InvokeCallback<ResponseCommand> invokeCallback) throws RemotingException, InterruptedException {
         invokeAsync0(channel, request, timeoutMillis, TimeUnit.MILLISECONDS, invokeCallback);
-    }
-
-    @Override
-    public void invokeOneWay(final Channel channel, final RequestCommand request, long timeoutMillis) throws RemotingException, InterruptedException {
-        invokeOneWay0(channel, request, timeoutMillis, TimeUnit.MILLISECONDS);
     }
 
     @Override

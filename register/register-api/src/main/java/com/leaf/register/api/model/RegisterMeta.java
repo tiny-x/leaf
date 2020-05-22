@@ -3,7 +3,7 @@ package com.leaf.register.api.model;
 import com.leaf.common.UnresolvedAddress;
 import com.leaf.common.model.ServiceMeta;
 
-public class RegisterMeta {
+public class  RegisterMeta {
 
     private ServiceMeta serviceMeta;
 
