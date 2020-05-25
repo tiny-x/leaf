@@ -6,6 +6,7 @@ import com.leaf.remoting.api.ProtocolHead;
 import com.leaf.remoting.api.RemotingCommandFactory;
 import com.leaf.remoting.api.RequestCommandProcessor;
 import com.leaf.remoting.api.ResponseStatus;
+import com.leaf.remoting.api.exception.RemotingException;
 import com.leaf.remoting.api.payload.RequestCommand;
 import com.leaf.remoting.api.payload.ResponseCommand;
 import com.leaf.rpc.container.ServiceProviderContainer;
@@ -104,11 +105,12 @@ public class DefaultRequestProcessor implements RequestProcessor {
                         Object result = null;
                         if (serviceWrapper == null) {
                             String message = String.format(
-                                    "%s service: [%s] not found",
-                                    context.channel(),
-                                    requestWrapper.getServiceMeta()
+                                    "service: [%s] not found, channel %s ",
+                                    requestWrapper.getServiceMeta(),
+                                    context.channel()
                             );
-                            logger.error(message);
+                            result = new RemotingException(message);
+                            logger.error(message, result);
                         } else {
                             if (filters.size() > 0) {
                                 for (RequestProcessFilter filter : filters) {

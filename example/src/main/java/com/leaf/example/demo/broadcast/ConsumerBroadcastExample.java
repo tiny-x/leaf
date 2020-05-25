@@ -32,7 +32,7 @@ public class ConsumerBroadcastExample {
 
         for (UnresolvedAddress address : addresses) {
             leafClient.connect(address);
-            leafClient.client().addChannelGroup(serviceMeta, address);
+            leafClient.remotingClient().addChannelGroup(serviceMeta, address);
         }
 
         HelloService helloService = DefaultProxyFactory.factory(HelloService.class)

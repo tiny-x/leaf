@@ -28,13 +28,14 @@ public class ProviderExample {
                 @Override
                 public void run() {
                     leafServer.start();
-                    // 注册到本地容器 未发布到注册中心
                     ServiceWrapper serviceWrapper = leafServer.serviceRegistry()
                             .provider(helloService)
                             .register();
                     leafServer.connectToRegistryServer("121.43.175.216:2181");
                     leafServer.publishService(serviceWrapper);
                     countDownLatch.countDown();
+
+                    Runtime.getRuntime().addShutdownHook(new Thread(leafServer::shutdown));
                 }
             }).start();
             Thread.sleep(500);

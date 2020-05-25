@@ -1,6 +1,5 @@
 package com.leaf.console.config;
 
-import com.leaf.common.concurrent.ConcurrentSet;
 import com.leaf.common.model.ServiceMeta;
 import com.leaf.register.api.*;
 import com.leaf.register.api.model.RegisterMeta;
@@ -41,7 +40,7 @@ public class Config {
                         }
                     }
                     if (event == NotifyEvent.ADD) {
-                        subscribeMetas.add(subscribeMeta);
+                        subscribeMetas.addIfAbsent(subscribeMeta);
                     } else {
                         subscribeMetas.remove(subscribeMeta);
                     }
@@ -61,7 +60,7 @@ public class Config {
                         }
                     }
                     if (event == NotifyEvent.ADD) {
-                        registerMetas.add(registerMeta);
+                        registerMetas.addIfAbsent(registerMeta);
                     } else {
                         registerMetas.remove(registerMeta);
                     }

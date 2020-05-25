@@ -93,4 +93,9 @@ public class DefaultRegisterService extends AbstractRegisterService implements R
     public RegisterType registerType() {
         return RegisterType.DEFAULT;
     }
+
+    @Override
+    public void shutdown() {
+
+    }
 }

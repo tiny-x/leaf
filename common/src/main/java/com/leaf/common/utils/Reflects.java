@@ -27,7 +27,15 @@ public class Reflects {
             METHODACCESS_CACHE.remove(aClass);
             invoker = MethodAccess.get(aClass);
         }
-        return invoker.invoke(obj, methodName, args);
+        if (Collections.isNotEmpty(args)) {
+            Class[] paramTypes = new Class[args.length];
+            for (int i = 0; i < args.length; i++) {
+                paramTypes[i] = args[i].getClass();
+            }
+            return invoker.invoke(obj, methodName, paramTypes, args);
+        } else {
+            return invoker.invoke(obj, methodName, args);
+        }
     }
 
     public static Object getTypeDefaultValue(Class<?> clazz) {

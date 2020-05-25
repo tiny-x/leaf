@@ -31,7 +31,8 @@ public class GenericProxyFactory extends AbstractProxyFactory {
                 Strings.isNullOrEmpty(version) ? Constants.DEFAULT_SERVICE_VERSION : version);
 
         for (UnresolvedAddress address : addresses) {
-            leafClient.client().addChannelGroup(serviceMeta, address);
+            leafClient.connect(address);
+            leafClient.remotingClient().addChannelGroup(serviceMeta, address);
         }
 
         if (leafClient.registerService() != null) {

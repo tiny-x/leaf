@@ -14,8 +14,73 @@
 + 负载均衡算法：加权轮询、加权随机
 + 注解配置
 
-
 #### 示例：
+##### 一个最简单的例子  
+##### 1、provider
+```` java
+public interface HelloService {
+
+    String sayHello(String name);
+
+    String sayHello(String name, String age);
+
+    String sayHello(User user);
+}
+
+public class HelloServiceImpl implements HelloService {
+
+    /**
+     * logger
+     */
+    private final static Logger logger = LoggerFactory.getLogger(HelloServiceImpl.class);
+
+    @Override
+    public String sayHello(String name) {
+        return "hello" + name;
+    }
+
+    @Override
+    public String sayHello(String name, String age) {
+        return "hello:" + name + ",age:" + age;
+    }
+
+    @Override
+    public String sayHello(User user) {
+        logger.info("HelloServiceImpl param:{}", user.getName());
+        return "HelloServiceImpl param: " + user.getName();
+    }
+}
+
+public class ProviderExample {
+
+    public static void main(String[] args) {
+        LeafServer leafServer = new DefaultLeafServer(9180);
+        leafServer.start();
+
+        leafServer.serviceRegistry()
+                .provider(new HelloServiceImpl())
+                .interfaceClass(HelloService.class)
+                .register();
+    }
+}
+````
+
+#### 2、consumer
+```` java
+public class ConsumerExample {
+
+    public static void main(String[] args) {
+        LeafClient leafClient = new DefaultLeafClient("consumer");
+
+       HelloService helloService = DefaultProxyFactory.factory(HelloService.class)
+                .consumer(leafClient)
+                .providers(new UnresolvedAddress("127.0.0.1", 9180))
+                .newProxy();
+        System.out.println(helloService.sayHello("i'm king", "119"));
+        System.out.println(helloService.sayHello(new User("达维安爵士", "108")));
+    }
+}
+````
 ##### 具体可参考example模块
 ##### 集成spring示例
 

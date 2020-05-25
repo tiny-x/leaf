@@ -18,6 +18,11 @@ public interface LeafServer {
     void start();
 
     /**
+     *
+     */
+    void shutdown();
+
+    /**
      * 本地容器查找
      *
      * @param directory

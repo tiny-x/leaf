@@ -50,7 +50,7 @@ public abstract class AbstractDispatcher implements Dispatcher {
     }
 
     protected ChannelGroup select(ServiceMeta metadata) {
-        List<ChannelGroup> groups = leafClient.client().directory(metadata);
+        List<ChannelGroup> groups = leafClient.remotingClient().directory(metadata);
 
         ChannelGroup group = loadBalancer.select(groups, metadata);
 
@@ -69,7 +69,7 @@ public abstract class AbstractDispatcher implements Dispatcher {
     }
 
     protected ChannelGroup[] groups(ServiceMeta metadata) {
-        List<ChannelGroup> channelGroups = leafClient.client().directory(metadata);
+        List<ChannelGroup> channelGroups = leafClient.remotingClient().directory(metadata);
         checkState(channelGroups.size() > 0, metadata + " no channel");
 
         ChannelGroup[] channelGroupsArray = new ChannelGroup[channelGroups.size()];
@@ -131,7 +131,7 @@ public abstract class AbstractDispatcher implements Dispatcher {
     private <T> InvokeFuture<T> invokeSync(RequestCommand requestCommand, Class<T> returnType, ChannelGroup channelGroup) throws Throwable {
         InvokeFuture<T> invokeFuture = new DefaultInvokeFuture<>(returnType, timeoutMillis);
         ResponseCommand responseCommand = leafClient
-                .client()
+                .remotingClient()
                 .invokeSync(channelGroup.remoteAddress(),
                         requestCommand,
                         timeoutMillis);
@@ -151,7 +151,7 @@ public abstract class AbstractDispatcher implements Dispatcher {
         switch (dispatchType) {
             case ROUND: {
                 invokeFuture = new DefaultInvokeFuture<T>(returnType, timeoutMillis);
-                leafClient.client().invokeAsync(
+                leafClient.remotingClient().invokeAsync(
                         channelGroup[0].remoteAddress(),
                         requestCommand,
                         timeoutMillis,
@@ -163,7 +163,7 @@ public abstract class AbstractDispatcher implements Dispatcher {
                 invokeFuture = new DefaultInvokeFutureGroup(futures);
                 for (int i = 0; i < channelGroup.length; i++) {
                     futures[i] = new DefaultInvokeFuture<T>(returnType, timeoutMillis);
-                    leafClient.client().invokeAsync(
+                    leafClient.remotingClient().invokeAsync(
                             channelGroup[i].remoteAddress(),
                             requestCommand.clone(),
                             timeoutMillis,
@@ -183,14 +183,14 @@ public abstract class AbstractDispatcher implements Dispatcher {
     private void invokeOneWay(RequestCommand requestCommand, DispatchType dispatchType, ChannelGroup... channelGroup) throws Throwable {
         switch (dispatchType) {
             case ROUND: {
-                leafClient.client().invokeOneWay(channelGroup[0].remoteAddress(),
+                leafClient.remotingClient().invokeOneWay(channelGroup[0].remoteAddress(),
                         requestCommand,
                         timeoutMillis);
                 break;
             }
             case BROADCAST: {
                 for (int i = 0; i < channelGroup.length; i++) {
-                    leafClient.client().invokeOneWay(channelGroup[i].remoteAddress(),
+                    leafClient.remotingClient().invokeOneWay(channelGroup[i].remoteAddress(),
                             requestCommand.clone(),
                             timeoutMillis);
                 }

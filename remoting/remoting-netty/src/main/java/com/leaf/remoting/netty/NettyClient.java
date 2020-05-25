@@ -18,7 +18,6 @@ import com.leaf.remoting.netty.event.ChannelEvent;
 import com.leaf.remoting.netty.handler.client.NettyClientHandler;
 import com.leaf.remoting.netty.handler.client.NettyConnectManageHandler;
 import io.netty.bootstrap.Bootstrap;
-import io.netty.channel.Channel;
 import io.netty.channel.ChannelFuture;
 import io.netty.channel.ChannelInitializer;
 import io.netty.channel.ChannelOption;
@@ -29,7 +28,6 @@ import io.netty.handler.timeout.IdleStateHandler;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -149,7 +147,7 @@ public class NettyClient extends NettyServiceAbstract implements RemotingClient 
     @Override
     public boolean addChannelGroup(Directory directory, UnresolvedAddress address) {
         ChannelGroup group = group(address);
-        CopyOnWriteArrayList groups = directoryChannelGroup.find(directory);
+        CopyOnWriteArrayList<ChannelGroup> groups = directoryChannelGroup.find(directory);
         boolean added = groups.addIfAbsent(group);
         if (added) {
             if (logger.isInfoEnabled()) {

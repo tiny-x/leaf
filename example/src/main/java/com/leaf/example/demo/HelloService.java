@@ -7,4 +7,9 @@ package com.leaf.example.demo;
 public interface HelloService {
 
     String sayHello(String name);
+
+    String sayHello(String name, String age);
+
+    String sayHello(User user);
+
 }

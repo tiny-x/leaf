@@ -88,6 +88,14 @@ public class DefaultLeafServer implements LeafServer {
     }
 
     @Override
+    public void shutdown() {
+        if (registerService != null) {
+            registerService.shutdown();
+        }
+        server.shutdownGracefully();
+    }
+
+    @Override
     public String application() {
         return null;
     }
@@ -142,5 +150,4 @@ public class DefaultLeafServer implements LeafServer {
 
         registerService.register(registerMeta);
     }
-
 }

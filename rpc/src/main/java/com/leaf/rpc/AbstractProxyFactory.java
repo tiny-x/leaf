@@ -135,10 +135,10 @@ public abstract class AbstractProxyFactory {
         leafClient.subscribe(serviceMeta, new NotifyListener<RegisterMeta>() {
             @Override
             public void notify(RegisterMeta registerMeta, NotifyEvent event) {
-                ChannelGroup group = leafClient.client().group(registerMeta.getAddress());
+                ChannelGroup group = leafClient.remotingClient().group(registerMeta.getAddress());
                 switch (event) {
                     case ADD: {
-                        if (!leafClient.client().group(registerMeta.getAddress()).isAvailable()) {
+                        if (!leafClient.remotingClient().group(registerMeta.getAddress()).isAvailable()) {
                             int connCount = registerMeta.getConnCount() < 1 ? 1 : registerMeta.getConnCount();
                             for (int i = 0; i < connCount; i++) {
                                 leafClient.connect(registerMeta.getAddress());
@@ -146,23 +146,23 @@ public abstract class AbstractProxyFactory {
                             leafClient.offlineListening(registerMeta.getAddress(), new OfflineListener() {
                                 @Override
                                 public void offline() {
-                                    leafClient.client().cancelReconnect(registerMeta.getAddress());
+                                    leafClient.remotingClient().cancelReconnect(registerMeta.getAddress());
                                     if (!group.isAvailable()) {
-                                        leafClient.client().removeChannelGroup(serviceMeta, registerMeta.getAddress());
+                                        leafClient.remotingClient().removeChannelGroup(serviceMeta, registerMeta.getAddress());
                                     }
                                 }
                             });
                         }
                         // channelGroup 和 serviceMeta 关系
-                        leafClient.client().addChannelGroup(serviceMeta, registerMeta.getAddress());
+                        leafClient.remotingClient().addChannelGroup(serviceMeta, registerMeta.getAddress());
                         // 设置channelGroup(相同地址的channel) weight
-                        leafClient.client()
+                        leafClient.remotingClient()
                                 .group(registerMeta.getAddress())
                                 .setWeight(serviceMeta, registerMeta.getWeight());
                         break;
                     }
                     case REMOVE: {
-                        leafClient.client().removeChannelGroup(serviceMeta, registerMeta.getAddress());
+                        leafClient.remotingClient().removeChannelGroup(serviceMeta, registerMeta.getAddress());
                         group.removeWeight(serviceMeta);
                         break;
                     }

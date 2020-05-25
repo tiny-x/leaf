@@ -74,4 +74,9 @@ public interface RegisterService {
      */
     void connectToRegistryServer(String addresses);
 
+    /**
+     * close
+     */
+    void shutdown();
+
 }

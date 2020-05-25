@@ -66,6 +66,8 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
      */
     private final ConcurrentHashMap<SubscribeMeta, Long> subscribeConsumerVersion = new ConcurrentHashMap<>();
 
+    private ScheduledThreadPoolExecutor executor;
+
     private CuratorFramework curatorFramework;
 
     private String namespace = Constants.ZOOKEEPER_NAME_SPACE;
@@ -120,7 +122,7 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
 
         curatorFramework.start();
 
-        ScheduledThreadPoolExecutor executor = new ScheduledThreadPoolExecutor(1, r -> {
+        executor = new ScheduledThreadPoolExecutor(1, r -> {
             Thread thread = new Thread(r);
             thread.setName("check pre register metas");
             return thread;
@@ -149,7 +151,7 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
                 }
 
             }
-        }, 500, 100, TimeUnit.MILLISECONDS);
+        }, 1000, 3000, TimeUnit.MILLISECONDS);
     }
 
     @Override
@@ -431,6 +433,28 @@ public class ZookeeperRegisterService extends AbstractRegisterService {
             logger.warn("lookup service fail", e);
         }
         return serviceMetas;
+    }
+
+    @Override
+    public void shutdown() {
+        if (executor != null) {
+            executor.shutdownNow();
+        }
+        for (Map.Entry<SubscribeMeta, PathChildrenCache> entry : pathChildrenCache.entrySet()) {
+            try {
+                entry.getValue().close();
+            } catch (IOException e) {
+                logger.error(e.getMessage(), e);
+            }
+        }
+        for (Map.Entry<ServiceMeta, PathChildrenCache> entry : serviceMetaPathChildrenCache.entrySet()) {
+            try {
+                entry.getValue().close();
+            } catch (IOException e) {
+                logger.error(e.getMessage(), e);
+            }
+        }
+        curatorFramework.close();
     }
 
     /**

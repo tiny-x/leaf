@@ -267,10 +267,10 @@ public class NettyServer extends NettyServiceAbstract implements RemotingServer 
         nioEventLoopGroupWorker.shutdownGracefully().syncUninterruptibly();
 
         if (publicExecutorService != null) {
-            publicExecutorService.shutdown();
+            publicExecutorService.shutdownNow();
         }
         if (scanResponseTableExecutorService != null) {
-            scanResponseTableExecutorService.shutdown();
+            scanResponseTableExecutorService.shutdownNow();
         }
     }
 

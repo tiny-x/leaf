@@ -20,7 +20,7 @@ public class DefaultLeafClient implements LeafClient {
 
     private final String application;
 
-    private final RemotingClient rpcClient;
+    private final RemotingClient remotingClient;
 
     private final RegisterType registerType;
 
@@ -43,19 +43,19 @@ public class DefaultLeafClient implements LeafClient {
 
         this.application = application;
         this.registerType = registerType;
-        this.rpcClient = new NettyClient(nettyClientConfig);
-        this.rpcClient.start();
+        this.remotingClient = new NettyClient(nettyClientConfig);
+        this.remotingClient.start();
     }
 
     @Override
-    public RemotingClient client() {
-        return rpcClient;
+    public RemotingClient remotingClient() {
+        return remotingClient;
     }
 
     @Override
     public void connect(UnresolvedAddress address) {
         try {
-            rpcClient.connect(address);
+            remotingClient.connect(address);
         } catch (Exception e) {
             AnyThrow.throwUnchecked(e);
         }
@@ -78,6 +78,14 @@ public class DefaultLeafClient implements LeafClient {
     public void connectToRegistryServer(String addresses) {
         registerService = RegisterFactory.registerService(registerType);
         registerService.connectToRegistryServer(addresses);
+    }
+
+    @Override
+    public void shutdown() {
+        remotingClient.shutdownGracefully();
+        if (registerService != null) {
+            registerService.shutdown();
+        }
     }
 
     @Override

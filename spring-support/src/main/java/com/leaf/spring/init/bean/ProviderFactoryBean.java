@@ -4,9 +4,11 @@ import com.google.common.base.Strings;
 import com.leaf.register.api.RegisterType;
 import com.leaf.rpc.provider.DefaultLeafServer;
 import com.leaf.rpc.provider.LeafServer;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 
-public class ProviderFactoryBean implements InitializingBean {
+public class ProviderFactoryBean implements FactoryBean<LeafServer>, InitializingBean, DisposableBean {
 
     private Integer port;
 
@@ -71,5 +73,25 @@ public class ProviderFactoryBean implements InitializingBean {
         if (this.registerType == null) {
             throw new IllegalArgumentException("registerType:" + registerType);
         }
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        leafServer.shutdown();
+    }
+
+    @Override
+    public boolean isSingleton() {
+        return true;
+    }
+
+    @Override
+    public LeafServer getObject() throws Exception {
+        return leafServer;
+    }
+
+    @Override
+    public Class<?> getObjectType() {
+        return LeafServer.class;
     }
 }

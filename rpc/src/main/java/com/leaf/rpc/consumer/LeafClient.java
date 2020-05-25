@@ -16,7 +16,7 @@ public interface LeafClient {
      * 通信客户端
      * @return
      */
-    RemotingClient client() ;
+    RemotingClient remotingClient() ;
 
     /**
      *
@@ -52,4 +52,8 @@ public interface LeafClient {
      */
     void offlineListening(UnresolvedAddress address, OfflineListener listener);
 
+    /**
+     *
+     */
+    void shutdown();
 }

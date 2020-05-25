@@ -19,7 +19,6 @@ public class ProviderExample {
         ServiceWrapper serviceWrapper = leafServer.serviceRegistry()
                 .provider(helloService)
                 .interfaceClass(HelloService.class)
-                .providerName("org.rpc.example.demo.HelloService")
                 .group("test")
                 .version("1.0.0")
                 .register();

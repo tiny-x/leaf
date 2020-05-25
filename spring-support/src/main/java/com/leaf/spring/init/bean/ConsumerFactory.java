@@ -3,9 +3,14 @@ package com.leaf.spring.init.bean;
 import com.leaf.register.api.RegisterType;
 import com.leaf.rpc.consumer.LeafClient;
 import com.leaf.rpc.consumer.DefaultLeafClient;
+import org.springframework.beans.factory.DisposableBean;
+import org.springframework.beans.factory.FactoryBean;
 import org.springframework.beans.factory.InitializingBean;
 
-public class ConsumerFactory implements InitializingBean {
+/**
+ *
+ */
+public class ConsumerFactory implements FactoryBean<LeafClient>, InitializingBean, DisposableBean {
 
     private String id;
 
@@ -38,5 +43,25 @@ public class ConsumerFactory implements InitializingBean {
         if (this.registerType == null) {
             throw new IllegalArgumentException("registerType:" + registerType);
         }
+    }
+
+    @Override
+    public boolean isSingleton() {
+        return true;
+    }
+
+    @Override
+    public LeafClient getObject() throws Exception {
+        return leafClient;
+    }
+
+    @Override
+    public Class<?> getObjectType() {
+        return LeafClient.class;
+    }
+
+    @Override
+    public void destroy() throws Exception {
+        leafClient.shutdown();
     }
 }

@@ -18,7 +18,7 @@ public class ConsumerOneWayExample {
         leafClient.connect(address);
 
         ServiceMeta serviceMeta = new ServiceMeta("test", "org.rpc.example.demo.HelloService", "1.0.0");
-        leafClient.client().addChannelGroup(serviceMeta, address);
+        leafClient.remotingClient().addChannelGroup(serviceMeta, address);
 
         HelloService helloService = DefaultProxyFactory.factory(HelloService.class)
                 .consumer(leafClient)
