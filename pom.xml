@@ -165,7 +165,7 @@
             <dependency>
                 <groupId>ch.qos.logback</groupId>
                 <artifactId>logback-classic</artifactId>
-                <version>1.0.13</version>
+                <version>1.2.0</version>
             </dependency>
 
             <!-- 代码直接调用log4j会被桥接到slf4j -->
